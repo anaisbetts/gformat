@@ -1,0 +1,23 @@
+2006-10-28  Daniel Nylander <po@danielnylander.se>
+
+	* sv/sv.po: Added Swedish translation.
+	* sv/figures/main.png: Added screenshot
+	* Makefile.am: Added sv to DOC_LINGUAS
+
+2006-03-17  Maxim Dziumanenko <mvd@mylinux.ua>
+
+	* Makefile.am: added uk to DOC_LINGUAS
+	* uk/uk.po: added
+	* uk/gfloppy-uk.omf: removed
+	* uk/gfloppy.xml: removed
+	* uk/legal.xml: removed
+	* uk/Makefile.am: removed
+
+2005-12-21  Dennis Cranston  <dennis_cranston@yahoo.com>
+
+	* C/gfloppy.xml: Fix bug #318993, update the scrollkeeper 
+	description.
+
+2005-12-05  Emmanuele Bassi <ebassi@cvs.gnome.org>
+
+	* *: ported to gnome-doc-utils

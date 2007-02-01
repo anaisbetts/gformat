@@ -1,0 +1,286 @@
+# gfloppy fr.po
+# Copyright (C) 2000 Free Software Foundation, Inc
+# Christian Marillat <marillat@alpes-net.fr>, 2000
+# Christophe Merlet (RedFox) <christophe@merlet.net>, 2000.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: gfloppy 0.9.3\n"
+"POT-Creation-Date: 2000-12-24 12:08+0100\n"
+"PO-Revision-Date: 2000-10-10 16:43-0400\n"
+"Last-Translator: Christophe Merlet (RedFox) <christophe@merlet.net>\n"
+"Language-Team: GNOME French Team <gnomefr@gnomefr.traduc.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ISO-8859-1\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/badblocks.c:102
+msgid "MInternal Error: Unable to seek to the correct location."
+msgstr ""
+
+#: src/badblocks.c:111
+#, c-format
+msgid "MInternal Error: Weird value (%ld) in do_test\n"
+msgstr ""
+
+#: src/badblocks.c:166
+#, c-format
+msgid "EBad block at block %lu"
+msgstr ""
+
+#. while (!i)
+#. ;
+#: src/badblocks.c:260
+msgid "MChecking for bad blocks..."
+msgstr ""
+
+#: src/badblocks.c:272
+#, c-format
+msgid "MFailed to open device %s for badblock checking\n"
+msgstr ""
+
+#: src/badblocks.c:291 src/gfloppy.c:215
+msgid "MChecking for bad blocks... Done"
+msgstr ""
+
+#: src/fdformat.c:44
+msgid "MFormatting the disk..."
+msgstr "MFormatage de la disquette..."
+
+#: src/fdformat.c:46
+msgid "EI don't know what this is, but it's very wrong."
+msgstr "EJe ne sais pas ce qu'il y a, mais c'est pas bon."
+
+#: src/fdformat.c:54 src/fdformat.c:66
+#, c-format
+msgid "EError formatting track #%d"
+msgstr "EErreur en formatant la piste #%d"
+
+#: src/fdformat.c:74
+msgid "EError during completion of formatting"
+msgstr "EErreur durant l'achèvement du formatage"
+
+#. XXXX - need to tell parent we're finished
+#: src/fdformat.c:78
+msgid "MFormatting the disk... Done"
+msgstr "MFormatage... terminé"
+
+#. XXXX - tell parent we're starting verify stage
+#: src/fdformat.c:94
+msgid "MVerifying the format..."
+msgstr "MVérification du format..."
+
+#: src/fdformat.c:99 src/fdformat.c:174
+msgid ""
+"EUnable to write to the floppy.\n"
+"\n"
+"Please confirm that it is not write-protected."
+msgstr ""
+"EIncapable d'écrire sur la disquette.\n"
+"\n"
+"Veuillez confirmer qu'elle n'est pasprotégé en écriture."
+
+#: src/fdformat.c:102 src/fdformat.c:177
+#, c-format
+msgid "EInsufficient permissions to open floppy device %s."
+msgstr "EPermissions inssufisantes pour ouvrir le périphérique de disquette %s"
+
+#: src/fdformat.c:106 src/fdformat.c:181
+msgid ""
+"EUnable to access the floppy disk.\n"
+"\n"
+"Please confirm that it is in the drive\n"
+"with the drive door shut."
+msgstr ""
+"EIncapable d'accéder à la disquette.\n"
+"\n"
+"Veuillez confirmer qu'elle est bien dans le lecteur\n"
+"avec le loquet de la porte fermé."
+
+#: src/fdformat.c:109
+#, c-format
+msgid ""
+"EGeneric error accessing floppy device %s.\n"
+"\n"
+"Error code %s:%d"
+msgstr ""
+"EErreur générique d'accès au périphérique disquette %s.\n"
+"\n"
+"Code d'erreur %s:%d"
+
+#: src/fdformat.c:129
+#, c-format
+msgid ""
+"ERead Error:\n"
+"Problem reading cylinder %d, expected %d, read %d"
+msgstr ""
+"EErreur de lecture :\n"
+"Problème en lisant le cylindre %d, attendu %d, lu %d"
+
+#: src/fdformat.c:132
+#, c-format
+msgid "EProblem reading cylinder %d, expected %d, read %d"
+msgstr "EProblème en lisant le cylindre %d, attendu %d, lu %d"
+
+#: src/fdformat.c:141
+#, c-format
+msgid "MBad data in cyl %d.  Continuing... "
+msgstr "MMauvaise données du cyl %d. Reprise... "
+
+#: src/fdformat.c:148
+#, c-format
+msgid "EError closing device %s"
+msgstr "EErreur en fermant le lecteur %s"
+
+#: src/fdformat.c:153
+msgid "MVerifying the format... Done"
+msgstr "MVérification du format... Terminé"
+
+#: src/fdformat.c:165
+#, c-format
+msgid "EUnable to write to device %s"
+msgstr "EIncapable d'écrire sur le lecteur %s"
+
+#: src/fdformat.c:184
+#, c-format
+msgid ""
+"EGeneric error accessing floppy device %s.\n"
+"\n"
+"Error code %s"
+msgstr ""
+"EEreur générique d'accès au périphérique de diquette %s.\n"
+"\n"
+"Code d'erreur %s"
+
+#: src/fdformat.c:194
+msgid "ECould not determine current format type"
+msgstr "ENe peux pas déterminer le type de format"
+
+#: src/gfloppy.c:166 src/gfloppy.c:199
+#, fuzzy
+msgid "MMaking filesystem on disk..."
+msgstr "MFormatage de la disquette..."
+
+#: src/gfloppy.c:169
+msgid "EUnable to create filesystem correctly."
+msgstr ""
+
+#: src/gfloppy.c:173 src/gfloppy.c:205
+#, fuzzy
+msgid "MMaking filesystem on disk... Done"
+msgstr "MFormatage... terminé"
+
+#: src/gfloppy.c:202 src/gfloppy.c:217
+#, fuzzy
+msgid "EUnable to create filesystem."
+msgstr "EIncapable d'écrire sur le lecteur %s"
+
+#: src/gfloppy.c:211
+msgid "MChecking for bad blocks... (this might take a while)"
+msgstr ""
+
+#: src/main.c:179
+msgid "The device to format"
+msgstr "Le lecteur à formater"
+
+#: src/main.c:180
+msgid "DEVICE"
+msgstr "LECTEUR"
+
+#. We do this to get around a bug in libglade.  Ideally we won't need
+#. * to do this in the future.
+#: src/main.c:207
+msgid "Format"
+msgstr "Formatage"
+
+#. initialize our widgets
+#: src/main.c:212
+#, c-format
+msgid "Formatting %s"
+msgstr "Formatage de %s"
+
+#: src/main.c:254
+msgid "Format another floppy?"
+msgstr "Formater une autre disquette ?"
+
+#: src/progress.c:117
+msgid "Floppy formatted successfully."
+msgstr "Disquette formatée avec succès."
+
+#: src/progress.c:121
+msgid "Floppy formatting cancelled."
+msgstr "Annulation du formatage de la disquette."
+
+#: src/progress.c:176
+msgid "Format progress."
+msgstr "Progression du formatage."
+
+#.
+#. * Translatable strings file generated by Glade.
+#. * Add this file to your project's POTFILES.in.
+#. * DO NOT compile it as part of your application.
+#.
+#: src/gfloppy-i18n.h:7
+msgid "Format a floppy"
+msgstr "Formater une disquette"
+
+#: src/gfloppy-i18n.h:8 src/gfloppy-i18n.h:10
+msgid "Linux Native (ext2)"
+msgstr "Linux Natif (ext2)"
+
+#: src/gfloppy-i18n.h:9
+msgid "Dos (FAT)"
+msgstr ""
+
+#: src/gfloppy-i18n.h:11
+msgid "Formatting /dev/floppy"
+msgstr "Formatage de /dev/floppy"
+
+#: src/gfloppy-i18n.h:12
+msgid "Floppy Density:"
+msgstr "Densité de la disquette :"
+
+#: src/gfloppy-i18n.h:13
+msgid "File system type:"
+msgstr "Type de système de fichier :"
+
+#: src/gfloppy-i18n.h:14
+msgid "High Density 3.5\" (1.44 MB)"
+msgstr ""
+
+#: src/gfloppy-i18n.h:15
+msgid "High Density 5.25\" (1.2 MB)"
+msgstr ""
+
+#: src/gfloppy-i18n.h:16
+msgid "Double Density 3.5\" (720 KB)"
+msgstr ""
+
+#: src/gfloppy-i18n.h:17
+msgid "Double Density 5.25\" (360 KB)"
+msgstr ""
+
+#: src/gfloppy-i18n.h:18
+msgid "Quick format"
+msgstr "Formatage rapide"
+
+#~ msgid ""
+#~ "Linux Native (ext2)\n"
+#~ "Dos (FAT)\n"
+#~ msgstr ""
+#~ "Linux Natif (ext2)\n"
+#~ "Dos (FAT)\n"
+
+#~ msgid ""
+#~ "High Density 3.5\" (1.44 MB)\n"
+#~ "High Density 5.25\" (1.2 MB)\n"
+#~ "Double Density 3.5\" (720 KB)\n"
+#~ "Double Density 5.25\" (360 KB)\n"
+#~ msgstr ""
+#~ "Haute Densité 3.5\" (1.44 Mo)\n"
+#~ "Haute Densité 5.25\" (1.2 Mo)\n"
+#~ "Double Densité 3.5\" (720 ko)\n"
+#~ "Double Densité 5.25\" (360 ko)\n"
+
+#~ msgid "EWarning: Could not open device %s"
+#~ msgstr "EAttention: Je ne peux pas ouvrir le lecteur %s"

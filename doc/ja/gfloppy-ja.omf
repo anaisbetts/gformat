@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<omf>
+  <resource>
+    <creator>
+      Baris Cicek
+    </creator>
+    <title>    &#x30D5;&#x30ED;&#x30C3;&#x30D4;&#x30FC;&#x521D;&#x671F;&#x5316;&#x30C4;&#x30FC;&#x30EB; &#x30DE;&#x30CB;&#x30E5;&#x30A2;&#x30EB;
+    </title>
+<!--
+   <contributor>
+      emerald@gnome.gr.jp (Japan GNOME Users Group)
+    </contributor>
+-->
+    <date>
+      January 27, 2003
+    </date>
+    <subject category="GNOME|&#x30E6;&#x30FC;&#x30C6;&#x30A3;&#x30EA;&#x30C6;&#x30A3;"/>
+      <format mime="text/xml" dtd=""/>
+      <identifier url="gfloppy.xml"/>
+      <language code="ja"/>
+      <relation seriesid="c13ed0ce-5731-11d6-86cc-c769addc7b88"/>
+  </resource>
+</omf>

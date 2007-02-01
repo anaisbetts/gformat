@@ -1,0 +1,449 @@
+<?xml version="1.0"?>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+    "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
+ <!ENTITY legal SYSTEM "legal.xml">
+  <!ENTITY appversion "2.2">
+  <!ENTITY manrevision "2.1">
+  <!ENTITY date "2003年1月">
+  <!ENTITY app "<application>フロッピー初期化ツール</application>">
+
+]>
+<!-- =============Document Header ============================= -->
+
+<article>
+  <articleinfo> 
+    <title>GFloppyマニュアル V&manrevision;</title>
+
+    <copyright> 
+      <year>2000</year> 
+      <holder>Kenny Graunke</holder> 
+    </copyright> 
+    <copyright> 
+      <year>2002</year> 
+      <holder>John Fleck</holder> 
+    </copyright>
+    <copyright>
+      <year>2003</year>
+      <holder>Baris Cicek</holder>
+    </copyright>
+    <copyright>
+      <year>2003</year>
+      <holder>鎌ヶ迫正俊 (日本語訳)</holder>
+    </copyright>
+
+    <publisher> 
+      <publishername>GNOMEドキュメンテーションプロジェクト</publishername> 
+    </publisher> 
+
+   &legal;
+   
+    <authorgroup>
+      <author> 
+        <firstname>Baris</firstname> 
+        <surname>Cicek</surname> 
+        <affiliation> 
+          <orgname>GNOMEドキュメンテーションプロジェクト</orgname> 
+          <address> <email>bcicek@phreaker.net</email> </address> 
+        </affiliation> 
+      </author> 
+      <author> 
+        <firstname>John</firstname> 
+        <surname>Fleck</surname> 
+        <affiliation> 
+          <orgname>GNOMEドキュメンテーションプロジェクト</orgname> 
+          <address> <email>jfleck@inkstain.net</email> </address> 
+        </affiliation> 
+      </author> 
+      <author> 
+        <firstname>Kenny</firstname> 
+        <surname>Graunke</surname> 
+        <affiliation> 
+          <orgname>GNOMEドキュメンテーションプロジェクト</orgname> 
+        </affiliation> 
+      </author> 
+      <othercredit role="translator">
+        <firstname>Masatoshi</firstname> 
+        <surname>KAMAGASAKO</surname> 
+        <affiliation> 
+          <orgname>日本GNOMEユーザ会 翻訳チーム</orgname> 
+          <address> <email>emerald@gnome.gr.jp</email> </address> 
+        </affiliation>
+        <contrib>日本語訳</contrib>
+      </othercredit>
+    </authorgroup>
+
+    <!-- According to GNU FDL, revision history is mandatory if you are -->
+    <!-- modifying/reusing someone else's document.  If not, you can omit it. -->
+    <!-- Remember to remove the &manrevision; entity from the revision entries other
+-->
+    <!-- than the current revision. -->
+    <!-- The revision numbering system for GNOME manuals is as follows: -->
+    <!-- * the revision number consists of two components -->
+    <!-- * the first component of the revision number reflects the release version of the GNOME desktop. -->
+    <!-- * the second component of the revision number is a decimal unit that is incremented with each revision of the manual. -->
+    <!-- For example, if the GNOME desktop release is V2.x, the first version of the manual that -->
+    <!-- is written in that desktop timeframe is V2.0, the second version of the manual is V2.1, etc. -->
+    <!-- When the desktop release version changes to V3.x, the revision number of the manual changes -->
+    <!-- to V3.0, and so on. -->  
+    <revhistory>
+      <revision>
+        <revnumber>Gfloppyマニュアル V&manrevision;</revnumber> 
+        <date>&date;</date> 
+        <revdescription> 
+          <para role="author">Baris Cicek
+            <email>bcicek@phreaker.net</email>
+          </para>
+          <para role="publisher">GNOMEドキュメンテーションプロジェクト</para>
+        </revdescription> 
+      </revision> 
+      
+      <revision> 
+        <revnumber>Gfloppyマニュアル V4.0</revnumber> 
+        <date>2002年6月</date> 
+        <revdescription> 
+          <para role="author">John Fleck
+            <email>jfleck@inkstain.net</email>
+          </para>
+          <para role="publisher">GNOMEドキュメンテーションプロジェクト</para>
+        </revdescription> 
+      </revision> 
+      
+      <revision> 
+        <revnumber>Gfloppyマニュアル</revnumber> 
+        <date>2000年</date> 
+        <revdescription> 
+          <para role="author">Kenny Graunke
+          </para>
+          <para role="publisher">GNOMEドキュメンテーションプロジェクト</para>
+        </revdescription> 
+      </revision> 
+    </revhistory> 
+
+    <releaseinfo>
+      このマニュアルはGFloppy第&appversion;版について説明しています。
+    </releaseinfo>
+    <legalnotice> 
+      <title>フィードバック</title>
+      <para>
+        この&app;やマニュアルについてのバグレポートや提案は、
+        <ulink url="ghelp:gnome-feedback" type="help">GNOMEフィード
+        バックページ</ulink>を参照してください。
+      </para>
+      <!-- Translators may also add here feedback address for translations -->
+      <para>
+        このマニュアルの日本語訳についての指摘や提案は
+        <email>emerald@gnome.gr.jp</email>
+        までお願いします。
+      </para>
+    </legalnotice> 
+  </articleinfo> 
+
+  <!--
+  <indexterm zone="index"> 
+    <primary>Gfloppy Manual</primary> 
+  </indexterm> 
+  <indexterm zone="index"> 
+    <primary>gfloppy</primary> 
+  </indexterm>
+  -->
+
+  <!-- ============= Document Body ============================= -->
+  <!-- ============= Introduction ============================== -->
+  <sect1 id="intro">
+    <title>はじめに</title>
+    <para>
+      <application>GFloppy</application>はLinuxシステム上でフロッピー
+      をフォーマットします。新しいフロッピーディスクは使う前にフォーマッ
+      トする必要があります。
+    </para>
+
+    <para>
+      <application>GFloppy</application>を実行するには、<guimenu>メイ
+      ンメニュー</guimenu>の<guisubmenu>システムツール</guisubmenu>サ
+      ブメニューから<guimenuitem>フロッピー初期化ツール</guimenuitem>
+      を選択するか、<!-- right-click on the floppy icon on your
+      desktop and select <guisubmenu>Format Floppy</guisubmenu>, -->コ
+      マンドラインから<command>gfloppy</command>と入力します。
+    </para>
+
+    <para>
+      このドキュメントでは<application>GFloppy</application>第
+      &appversion;版について説明しています。
+    </para>
+
+  </sect1>
+
+  <!-- ================ Usage ================================ -->
+
+  <sect1 id="usage">
+    <title>GFloppyの使い方</title>
+    <para>
+      <application>GFloppy</application>を起動すると、<xref
+      linkend="gfloppymainwindow"/>のような<interface>メインウィンドウ
+      </interface>が表示されます。
+
+      <figure id="gfloppymainwindow">
+        <title>Gfloppyメインウィンドウ</title>
+        <screenshot>
+          <screeninfo>GFloppyメインウィンドウ</screeninfo>
+          <mediaobject>
+            <imageobject>
+              <imagedata fileref="figures/main.png" format="PNG" />
+            </imageobject>
+            <imageobject>
+              <imagedata fileref="figures/main.eps" format="EPS" />
+            </imageobject>
+            <textobject>
+              <phrase>GFloppyメインウィンドウ</phrase>
+            </textobject>
+            <caption><para>GFloppyメインウィンドウ</para></caption>
+          </mediaobject>
+        </screenshot>
+      </figure>
+    </para>
+
+    <para>
+      書き込み禁止になっていないフロッピーディスクを挿入します。
+    </para>
+
+    <warning>
+      <title>警告</title>
+      <para>
+	GFloppyはフロッピー上の全てのファイルを破壊します。削除したく
+	ないファイルを保存しているフロッピーはフォーマットしないでくだ
+	さい。
+      </para>
+    </warning>
+    <para>
+      GFloppyを使うには、フロッピーディスクの密度とデータ容量を知って
+      いる必要があります。今日のほとんどのディスクは高密度、1.44MB 3.5
+      インチのディスクです。
+   </para>
+    <para>
+      ファイルシステムを選択します。DOSもしくはWindowsでフロッピーを利
+      用する必要があるのであれば<guibutton>DOS (FAT)</guibutton>を選択
+      します。そうでなければ<guibutton>Linux Native (ext2)</guibutton>
+      を選択します。Linuxネイティブなファイルシステムはほとんどの非
+      Linuxなシステムでは読み込めません。
+   </para>
+    <para>
+      新規にフォーマットしたフロッピーに<guibutton>ボリューム名
+      </guibutton>を付けることができます。<guibutton>ファイルシステム
+      の指定</guibutton>のテキストボックスにレベルを入力します。
+    </para>
+    <para>
+      最後に、フォーマットのモードを選択します。
+      <variablelist>
+	<varlistentry>
+	  <term><guibutton>高速</guibutton></term>
+	  <listitem>
+	    <para>
+	      高速フォーマットは最速ですが、フロッピーの不良 "ブロック
+	      " はチェックしません。ファイルテーブルを消去するだけです
+	      ので、理論上はデータを回復可能です。
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term><guibutton>標準</guibutton></term>
+	  <listitem>
+	    <para>
+	      標準フォーマットは低レベルのフォーマットですが、不良ブロッ
+	      クはチェックしません。従って、不良なフロッピーだとフォー
+	      マットに失敗するでしょう。
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term><guibutton>完全</guibutton></term>
+	  <listitem>
+	    <para>
+	      完全フォーマットは不良フロックをチェックして低レベルの
+	      フォーマットを行います。
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </para>
+
+    <!--
+    <para>
+      Quick format is faster but does not check your floppy disk for bad
+      "blocks". The slower regular format is useful if you have not formatted
+      your floppy before, or if you suspect your disk might be bad.
+    </para>
+    -->
+
+    <para>
+      <guibutton>フォーマット</guibutton>ボタンをクリックしてフォーマッ
+      トを開始します。<!-- , as shown in these figures. -->
+    </para>
+    
+    <para>
+      フォーマット、ベリファイ、ファイルシステム作成といった
+      <application>Gfloppy</application>の動作の進捗を通知する一連のダ
+      イアログが表示されます。
+    </para>
+    
+    <para>
+      <guibutton>高速フォーマット</guibutton>も<guibutton>標準フォーマッ
+      ト</guibutton>も選択していない場合、
+      <application>GFloppy</application>はフロッピーの不良 "ブロック"
+      をチェックします。<application>Gfloppy</application>不良ブロック
+      を見つけるような場合、そのフロッピーは使い古されています。
+    </para>
+
+    <para>
+      <application>GFloppy</application>はフォーマットが成功したか否か
+      を通知し、メインウィンドウに戻ります。
+    </para>
+  </sect1>
+
+  <sect1 id="troubleshooting">
+    <title>トラブルシューティング</title>
+    <para>
+      フロッピーディスクが挿入されていない場合、GFloppyはフォーマット
+      するメディアがないと通知するダイアログを表示します。
+    </para>
+    <para>
+      フロッピーが書き込み禁止の場合、GFloppyはその旨を警告します。書
+      き込み禁止を解除するには、フロッピーを取り出して裏返してみます。
+      標準的な3.5インチフロッピーは左上の角に小さなブロックタブがあり
+      ます。これを下にスライドして穴を塞ぎます。ブロックタブのないフロッ
+      ピーの場合、それは永久に書き込み禁止です。
+    </para>
+
+    <!--
+      <screenshot id="writeprotected">
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="figures/writeprotected.png" format="PNG"/>
+          </imageobject>
+          <imageobject>
+            <imagedata fileref="figures/writeprotected.eps" format="EPS"/>
+          </imageobject>
+          <textobject>
+            <phrase>Write protected</phrase>
+          </textobject>
+          <caption>
+            <para>Write protected</para>
+          </caption>
+        </mediaobject>
+      </screenshot>
+    </para>
+
+   <para>
+    If you cannot choose to format DOS floppies, as shown in <xref
+    linkend="nodos"/>, you need to install <filename>mtools</filename>.
+   </para>
+   <tip>
+    <title>Tip</title>
+    <para>
+     On an RPM based system, such as Red Hat, you can install <filename>
+     mtools</filename> using <ulink
+     url="gnome-help:gnorpm"><application>GnoRPM</application></ulink>,
+     from the <guisubmenu>System</guisubmenu> of
+     the <guimenu>Main Menu</guimenu>.
+    </para>
+   </tip>
+   <para>
+      <screenshot id="nodos">
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="figures/nodos.png" format="PNG"/>
+    </imageobject>
+      <imageobject>
+        <imagedata fileref="figures/nodos.eps" format="EPS"/>
+    </imageobject>
+      <textobject>
+        <phrase>Cannot format DOS floppies</phrase>
+      </textobject>
+      <caption>
+        <para>Cannot format DOS floppies</para>
+      </caption>
+    </mediaobject>
+    </screenshot>
+   </para>
+  -->
+
+  </sect1>
+
+  <sect1 id="bugs">
+    <title>既知のバグと制限</title>
+    <para>
+      GFloppyはLinux上でしか動作しません。
+    </para>
+  </sect1>
+
+  <!-- ============= Authors ================================ -->
+
+  <sect1 id="authors">
+    <title>作者</title>
+    <para>
+      <application>GFloppy</application>はJonathan Blandford
+      (<email>jrb@redhat.com</email>)によって書かれました。コメント、
+      提案、バグレポートは全て<ulink url="http://bugzilla.gnome.org"
+      type="http">GNOMEバグトラッキングデータベース</ulink>に送ってく
+      ださい。GNOME 1.1あるいは以降のバージョンを使っているのであれば、
+      <guimenu>メインメニュー</guimenu>の<guisubmenu>ユーティリティ
+      </guisubmenu>サブメニューにある<application>バグ報告ツール
+      </application>(<command>bug-buddy</command>)もバグレポートに利用
+      できます。
+    </para>
+
+    <para>
+      このマニュアルはBaris Cicek (<email>bcicek@phreaker.net</email>)
+      によって書かれました。このマニュアルに関するコメントや提案は全て
+      <ulink type="http"
+      url="http://developer.gnome.org/projects/gdp">GNOMEドキュメンテー
+      ションプロジェクト</ulink>へ<email>docs@gnome.org</email>にメー
+      ルで送付してください。また、オンラインで<ulink type="http"
+      url="http://developer.gnome.org/projects/gdp/doctable/">GNOMEド
+      キュメンテーションステータステーブル</ulink>を利用してコメントす
+      ることでもできます。
+    </para>
+
+    <para>
+      日本語訳は鎌ヶ迫正俊 (<email>emerald@gnome.gr.jp</email>)による
+      ものです。日本語訳に関するコメントや提案は全て
+      <email>gnome-translation@gnome.gr.jp</email>もしくは
+      <email>emerald@gnome.gr.jp</email>にメールで送付してください。
+    </para>
+
+  </sect1>
+
+  <!-- ============= Application License ============================= -->
+
+  <sect1 id="license">
+    <title>ライセンス</title>
+    <para>
+      このプログラムはフリーソフトウェアです。フリーソフトウェア財団発
+      行の<ulink type="help" url="gnome-help:gpl"><citetitle>GNU 一般
+      公有使用許諾契約書</citetitle></ulink>第二版あるいは(あなたの選
+      択で)後の版の下おいて再配布や改変することができます。
+    </para>
+
+    <para>
+      このプログラムは有用であることを期待して配布していますが、無保証
+      です。商業目的や特定の目的に適合した場合の暗黙の保証すら含まれて
+      おりません。詳細は<citetitle>GNU 一般公有使用許諾契約書
+      </citetitle>をご覧ください。
+    </para>
+
+    <para>
+      <citetitle>GNU 一般公有使用許諾契約書</citetitle>の複写は
+        <citetitle>GNOMEユーザーズガイド</citetitle>の付録として収録さ
+        れています。<citetitle>GNU 一般公有使用許諾契約書</citetitle>
+        の複写はフリーソフトウェア財団から、<ulink type="http"
+        url="http://www.fsf.org">彼らのウェブサイト</ulink>を訪れるこ
+        とにより、また、以下の住所に手紙を書くことによっても入手するこ
+        とも可能です。
+      <address>
+        Free Software Foundation, Inc.
+        <street>59 Temple Place</street> - Suite 330
+        <city>Boston</city>, <state>MA</state> <postcode>02111-1307</postcode>
+        <country>USA</country>
+      </address>
+    </para>
+  </sect1>
+</article>

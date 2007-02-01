@@ -1,0 +1,12 @@
+README
+NEWS
+gfloppy.desktop
+gfloppy.keys
+
+
+# The help files should be copied to a dir of their
+# own. Ie. "cp -r C no" for the Norwegian help etc.
+# The screenshots should also be localized:
+
+doc/C/gfloppy.sgml
+doc/C/topic.dat

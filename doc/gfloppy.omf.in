@@ -1,0 +1,9 @@
+<?xml version="1.0" standalone="no"?>
+<omf>
+  <resource>
+    <subject category="GNOME|Utilities"/>
+    <type>user's manual</type>
+    <relation seriesid="c13ed0ce-5731-11d6-86cc-c769addc7b88"/>
+    <rights type="GNU FDL" license.version="1.1" holder="Sun Microsystems"/>
+  </resource>
+</omf>

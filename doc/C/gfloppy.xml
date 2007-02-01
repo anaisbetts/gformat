@@ -1,0 +1,447 @@
+<?xml version="1.0"?>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+    "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
+ <!ENTITY legal SYSTEM "legal.xml">
+  <!ENTITY appversion "2.4">
+  <!ENTITY manrevision "2.1">
+  <!ENTITY date "January 2003">
+  <!ENTITY app "Gfloppy">
+
+]>
+<!-- =============Document Header ============================= -->
+
+<article id="index" lang="en">
+ <articleinfo> 
+    <title>Floppy Formatter Manual</title>       
+    <abstract role="description">
+      <para>Floppy Formatter, also known as &app;, formats floppy disks for use in Linux.</para>
+    </abstract>
+    <copyright> 
+      <year>2000</year> 
+      <holder>Kenny Graunke</holder> 
+    </copyright> 
+    <copyright> 
+      <year>2002</year> 
+      <holder>John Fleck</holder> 
+    </copyright>
+    <copyright>
+      <year>2003</year>
+      <holder>Baris Cicek</holder>
+		</copyright>
+<!-- translators: uncomment this:
+
+  <copyright>
+   <year>2002</year>
+   <holder>ME-THE-TRANSLATOR (Latin translation)</holder>
+  </copyright>
+
+   -->
+
+    <publisher> 
+      <publishername> GNOME Documentation Project </publishername> 
+    </publisher> 
+
+   &legal;
+   
+    <authorgroup> 
+      <author role="maintainer"> 
+		<firstname>Baris</firstname> 
+		<surname>Cicek</surname> 
+		<affiliation> 
+	  		<orgname>GNOME Documentation Project</orgname> 
+	  		<address> <email>bcicek@phreaker.net</email> </address> 
+		</affiliation> 
+      </author> 
+
+      <author> 
+		<firstname>John</firstname> 
+		<surname>Fleck</surname> 
+		<affiliation> 
+	  		<orgname>GNOME Documentation Project</orgname> 
+	  		<address> <email>jfleck@inkstain.net</email> </address> 
+		</affiliation> 
+      </author> 
+      <author> 
+		<firstname>Kenny</firstname> 
+		<surname>Graunke</surname> 
+		<affiliation> 
+	  		<orgname>GNOME Documentation Project</orgname> 
+	</affiliation> 
+      </author> 
+      
+<!-- This is appropriate place for other contributors: translators,
+     maintainers,  etc. Commented out by default.
+     
+      <othercredit role="translator">
+		<firstname>Latin</firstname> 
+		<surname>Translator 1</surname> 
+		<affiliation> 
+	  		<orgname>Latin Translation Team</orgname> 
+	  		<address> <email>translator@gnome.org</email> </address> 
+		</affiliation>
+		<contrib>Latin translation</contrib>
+      </othercredit>
+-->
+    </authorgroup>
+
+
+<!-- According to GNU FDL, revision history is mandatory if you are -->
+<!-- modifying/reusing someone else's document.  If not, you can omit it. -->
+<!-- Remember to remove the &manrevision; entity from the revision entries other
+-->
+<!-- than the current revision. -->
+<!-- The revision numbering system for GNOME manuals is as follows: -->
+<!-- * the revision number consists of two components -->
+<!-- * the first component of the revision number reflects the release version of the GNOME desktop. -->
+<!-- * the second component of the revision number is a decimal unit that is incremented with each revision of the manual. -->
+<!-- For example, if the GNOME desktop release is V2.x, the first version of the manual that -->
+<!-- is written in that desktop timeframe is V2.0, the second version of the manual is V2.1, etc. -->
+<!-- When the desktop release version changes to V3.x, the revision number of the manual changes -->
+<!-- to V3.0, and so on. -->  
+    <revhistory>
+      <revision> 
+		<revnumber>Gfloppy Manual V&manrevision;</revnumber> 
+		<date>&date;</date> 
+		<revdescription> 
+	  		<para role="author">Baris Cicek
+	    	<email>bcicek@phreaker.net</email>
+	  		</para>
+	  		<para role="publisher">GNOME Documentation Project</para>
+		</revdescription> 
+      </revision> 
+
+      <revision> 
+		<revnumber>Gfloppy Manual V4.0</revnumber> 
+		<date>June
+		 2002</date> 
+		<revdescription> 
+	  		<para role="author">John Fleck
+	    	<email>jfleck@inkstain.net</email>
+	  		</para>
+	  		<para role="publisher">GNOME Documentation Project</para>
+		</revdescription> 
+      </revision> 
+
+      <revision> 
+		<revnumber>Gfloppy Manual</revnumber> 
+		<date>2000</date> 
+		<revdescription> 
+	  		<para role="author">Kenny Graunke
+	    	
+	  		</para>
+	  		<para role="publisher">GNOME Documentation Project</para>
+		</revdescription> 
+      </revision> 
+    </revhistory> 
+
+    <releaseinfo>This manual describes version &appversion; of Gfloppy Manual
+    </releaseinfo> 
+    <legalnotice> 
+      <title>Feedback</title> 
+      <para>To report a bug or make a suggestion regarding the &app; application or
+      this manual, follow the directions in the <ulink url="ghelp:gnome-feedback"
+	  type="help">GNOME Feedback Page</ulink>. 
+      </para>
+<!-- Translators may also add here feedback address for translations -->
+    </legalnotice> 
+  </articleinfo>
+<!--
+  <indexterm zone="index"> 
+    <primary>Gfloppy Manual</primary> 
+  </indexterm> 
+  <indexterm zone="index"> 
+    <primary>gfloppy</primary> 
+  </indexterm>
+-->
+ <!-- ============= Document Body ============================= -->
+
+ <!-- ============= Introduction ============================== -->
+ <sect1 id="intro">
+  <title>Introduction</title>
+
+  <para>
+   <application>GFloppy</application> formats floppy disks for Linux.
+   New floppy disks might need to be formatted before they can be used.
+  </para>
+
+  <para>
+   To run <application>GFloppy</application>, select
+   <guimenuitem>Floppy Formatter</guimenuitem> from the
+   <guisubmenu>System Tools</guisubmenu> submenu of the <guimenu>Main
+   Menu</guimenu>, <!-- right-click on the floppy icon on your desktop and
+   select <guisubmenu>Format Floppy</guisubmenu>, -->or type
+   <command>gfloppy</command> on the command line. 
+  </para>
+
+  <para>
+   This document describes version &appversion; of
+   <application>GFloppy</application>.
+  </para>
+
+ </sect1>
+
+
+ <!-- ================ Usage ================================ -->
+
+ <sect1 id="usage">
+  <title>Use of GFloppy</title>
+   <para>
+    When you start <application>GFloppy</application>, the
+    <interface>Main window</interface> opens, shown in <xref linkend="gfloppymainwindow"/>.
+      <figure id="gfloppymainwindow">
+	<title>Gfloppy Main Window</title>
+      <screenshot>
+	<screeninfo>GFloppy Main Window</screeninfo>
+	<mediaobject>
+	  <imageobject>
+	    <imagedata fileref="figures/main.png" format="PNG" />
+	  </imageobject>
+      <imageobject>
+	<imagedata fileref="figures/main.eps" format="EPS" />
+    </imageobject>
+      <textobject>
+	<phrase>GFloppy Main Window</phrase>
+      </textobject>
+      <caption><para>GFloppy Main Window</para></caption>
+    </mediaobject>
+      
+     </screenshot>
+   </figure>
+   </para>
+
+   <para>
+    Insert a floppy disk that is not write-protected.
+   </para>
+
+   <warning>
+    <title>Warning</title>
+    <para>
+     GFloppy will destroy all files on your floppy disk. Do not format floppies
+     containing files you wish to keep.
+    </para>
+   </warning>
+  <para>
+    GFloppy needs to know the density of your floppy disk, the amount of data
+    it can hold. Most disks today are High Density, 1.44MB 3.5".
+   </para>
+
+   <para>
+    Select your file system type. If you need to use your floppy under
+    DOS or Windows, choose <guibutton>DOS (FAT)</guibutton>. Otherwise,
+    choose <guibutton>Linux Native (ext2)</guibutton>. Linux Native
+    cannot be read on most non-Linux machines.
+   </para>
+	 <para>
+		You can also give <guibutton>Volume name</guibutton> to your newly formatted
+		floppies. To do this type your label in the text box under <guibutton>Filesystem
+		Settings</guibutton>.
+	 </para>
+
+	 <para>
+		Finally, you should select the mode of your formatting. 
+		<variablelist>
+	  <varlistentry><term><guibutton>Quick</guibutton></term>
+		<listitem>
+			<para>
+			Quick format is fastest but does not check your floppy for bad "blocks". It
+			just deletes the file table so your data is theoretically recoverable.
+			</para>
+		</listitem>
+		</varlistentry>
+		<varlistentry><term><guibutton>Standard</guibutton></term>
+		<listitem>
+			<para>
+			Standard format is a low-level format, but it does not check bad blocks. Thus if 
+			you have a faulty floppy it will fail to format.
+			</para>	
+		</listitem>
+		</varlistentry>
+		<varlistentry><term><guibutton>Thorough</guibutton></term>
+		<listitem>
+			<para>
+			Thorough format checks floppy for bad blocks and low-level format it.
+			</para>
+		</listitem>
+		</varlistentry>
+		</variablelist>
+		</para>
+<!--
+   <para>
+    Quick format is faster but does not check your floppy disk for bad
+    "blocks". The slower regular format is useful if you have not formatted your
+    floppy before, or if you suspect your disk might be bad.
+   </para>
+-->
+   <para>
+    Click on the <guibutton>Format</guibutton> button to start formatting your
+    floppy disk, as shown in these figures.
+   </para>
+
+    <para>You will see a series of dialogs informing you that
+    <application>Gfloppy</application> is formatting, verifying and making a
+    filesystem on your disk.</para>
+
+   <para>
+      Unless you select <guibutton>Quick Format</guibutton> or <guibutton>Standard</guibutton>,
+    <application>GFloppy</application> checks for bad "blocks" on your floppy. If
+    <application>Gfloppy</application> finds any, your floppy is
+    wearing out.
+
+    </para>
+
+   <para>
+      <application>GFloppy</application> will let you know if it was successful
+    and it will return you to the main window.
+  
+    </para>
+  </sect1>
+
+ <sect1 id="troubleshooting">
+  <title>Troubleshooting</title>
+   <para>
+    When no floppy disk is inserted, GFloppy displays a dialog
+    informing you that there's no media to be formated. 
+	</para>
+	<para>
+		If your disk is write protected, GFloppy will warn you as well. 
+    To un-write protect your floppy, eject it and turn it over. Standard 
+		3.5 inch floppies have a small black tab in the upper-left corner. Slide 
+		it down so it covers the hole. If the floppy does not have a 
+		black tab, it is permanently write protected.
+	</para>
+<!--
+      <screenshot id="writeprotected">
+	<mediaobject>
+	  <imageobject>
+	    <imagedata fileref="figures/writeprotected.png" format="PNG"/>
+    </imageobject>
+      <imageobject>
+	<imagedata fileref="figures/writeprotected.eps" format="EPS"/>
+    </imageobject>
+      <textobject>
+	<phrase>Write protected</phrase>
+      </textobject>
+      <caption>
+	<para>Write protected</para>
+      </caption>
+    </mediaobject>
+    </screenshot>
+    </para>
+
+
+   <para>
+    If you cannot choose to format DOS floppies, as shown in <xref
+    linkend="nodos"/>, you need to install <filename>mtools</filename>.
+   </para>
+   <tip>
+    <title>Tip</title>
+    <para>
+     On an RPM based system, such as Red Hat, you can install <filename>
+     mtools</filename> using <ulink
+     url="gnome-help:gnorpm"><application>GnoRPM</application></ulink>, from the
+     <guisubmenu>System</guisubmenu> of
+     the <guimenu>Main Menu</guimenu>.
+    </para>
+   </tip>
+   <para>
+      <screenshot id="nodos">
+	<mediaobject>
+	  <imageobject>
+	    <imagedata fileref="figures/nodos.png" format="PNG"/>
+    </imageobject>
+      <imageobject>
+	<imagedata fileref="figures/nodos.eps" format="EPS"/>
+    </imageobject>
+      <textobject>
+	<phrase>Cannot format DOS floppies</phrase>
+      </textobject>
+      <caption>
+	<para>Cannot format DOS floppies</para>
+      </caption>
+    </mediaobject>
+    </screenshot>
+   </para>
+-->
+ </sect1>
+
+ <sect1 id="bugs">
+  <title>Known Bugs and Limitations</title>
+  <para>
+   GFloppy only works on Linux.
+  </para>
+ </sect1>
+
+<!-- ============= Authors ================================ -->
+
+ <sect1 id="authors">
+  <title>Authors</title>
+  <para>
+   <application>GFloppy</application> was written by Jonathan Blandford
+   (<email>jrb@redhat.com</email>). Please send all comments, suggestions,
+   and bug reports to the <ulink url="http://bugzilla.gnome.org" type="http">
+   GNOME bug tracking database</ulink>. If you are using GNOME 1.1 or later, you
+   can also use <application>Bug Report Tool</application>
+   (<command>bug-buddy</command>), available in the
+   <guisubmenu>Programming</guisubmenu> submenu of <guimenu>Main Menu</guimenu>,
+   for submitting bug reports.
+  </para>
+
+  <para>
+   This manual was written by Baris Cicek
+   (<email>bcicek@phreaker.net</email>). Please send all comments and
+   suggestions regarding this manual to the <ulink type="http"
+   url="http://developer.gnome.org/projects/gdp/">GNOME Documentation Project</ulink> 
+   by sending an email to <email>docs@gnome.org</email>. You can also
+   add your comments online by using the <ulink type="http"
+   url="http://developer.gnome.org/projects/gdp/doctable/">GNOME Documentation
+   Status Table</ulink>.
+  </para>
+
+  <!-- For translations: uncomment this:
+
+  <para>
+   Latin translation was done by ME
+   (<email>MYNAME@MYADDRESS</email>). Please send all  comments  and
+   suggestions regarding this translation to SOMEWHERE.
+  </para>
+
+  -->
+
+ </sect1>
+
+
+ <!-- ============= Application License ============================= -->
+
+ <sect1 id="license">
+  <title>License</title>
+  <para>
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the <ulink url="ghelp:gpl"><citetitle>GNU General Public
+   License</citetitle></ulink> as published by the Free Software Foundation;
+   either version 2 of the License, or (at your option) any later
+   version.
+  </para>
+  <para>
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the <ulink
+   url="ghelp:gpl"><citetitle>GNU General Public
+   License</citetitle></ulink> for more details.
+  </para>
+  <para>
+   A copy of the <citetitle>GNU General Public License</citetitle> is
+   included as an appendix to the <citetitle>GNOME Users
+   Guide</citetitle>.  You may also obtain a copy of the
+   <citetitle>GNU General Public License</citetitle> from the Free
+   Software Foundation by visiting <ulink type="http"
+   url="http://www.fsf.org">their Web site</ulink> or by writing to
+   <address>
+    Free Software Foundation, Inc.
+    <street>59 Temple Place</street> - Suite 330
+    <city>Boston</city>, <state>MA</state> <postcode>02111-1307</postcode>
+    <country>USA</country>
+   </address>
+  </para>
+ </sect1>
+</article>
+

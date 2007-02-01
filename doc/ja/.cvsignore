@@ -1,0 +1,7 @@
+Makefile
+Makefile.in
+gfloppy
+*.html
+omf_timestamp
+gfloppy.junk
+gfloppy-ja.omf.out

@@ -1,0 +1,15 @@
+ABOUT-NLS
+config.log
+config.h
+config.h.in
+config.cache
+config.status
+stamp-h
+Makefile
+Makefile.in
+intl
+configure
+aclocal.m4
+gfloppy.desktop
+gfloppy.keys
+gfloppy.schemas

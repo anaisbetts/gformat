@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<omf>
+       <resource>
+	<creator>
+	Baris Cicek
+	</creator>
+       <title>
+      De Diskette formatteren Handleiding
+    </title>
+    <date>
+	18 Mei, 2005
+    </date>
+     <subject category="GNOME|Utilities"/>
+     <format mime="text/xml" dtd=""/>
+     <identifier url="file:/usr/share/gnome/help/gfloppy/nl/gfloppy.xml"/>
+     <language code="nl"/>
+     <relation seriesid="c13ed0ce-5731-11d6-86cc-c769addc7b88"/>
+     </resource>
+     </omf>

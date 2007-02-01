@@ -1,0 +1,46 @@
+.\" gfloppy.1 - a simple floppy formatter
+.\" Copyright 2001  Jochen Voss
+.TH gfloppy 1 "Aug 8 2002" "gnome-utils 2.0.0"
+.SH NAME
+gfloppy \- a simple floppy formatter for the GNOME
+.SH SYNOPSIS
+.B gfloppy
+.sp
+or select
+.B Floppy Formatter
+from the
+.B System
+submenu of the Applications menu.
+.sp
+or right click on the floppy icon on your desktop and select
+.B Floppy Formatter
+.SH DESCRIPTION
+.B gfloppy
+is a simple floppy formatter for Linux.  It supports the DOS format
+and the ext2 file system.  In order to create DOS floppies you need to
+have the mtools package installed.
+.P
+For full documentation see the
+.B Floppy Formatter
+online help.
+.SH OPTIONS
+In addition to the standard GNOME options
+.B gfloppy
+supports the following one.
+.TP
+.BI \-\-device= DEVICE
+The device to format (instead of
+.IR /dev/floppy/0 or /dev/fd0 ).
+.SH AUTHOR
+.B Floppy Formatter
+was written by Jonathan Blandford (<jrb@redhat.com>).
+.P
+This manual page was written by Jochen Voss
+<voss@mathematik.uni-kl.de>.
+.SH SEE ALSO
+.BR mformat (1),
+.BR fdformat (8),
+.BR superformat (8),
+and the
+.B fdutils
+info manual

@@ -1,0 +1,14 @@
+[Desktop Entry]
+Encoding=UTF-8
+_Name=Floppy Formatter
+_Comment=Format floppy disks
+Exec=gfloppy
+Terminal=false
+Icon=gnome-dev-floppy
+Type=Application
+StartupNotify=true
+Categories=GTK;GNOME;Application;System;
+X-GNOME-Bugzilla-Bugzilla=GNOME
+X-GNOME-Bugzilla-Product=gnome-utils
+X-GNOME-Bugzilla-Component=gfloppy
+MimeType=x-device/floppy;

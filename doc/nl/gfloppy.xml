@@ -1,0 +1,440 @@
+<?xml version="1.0"?>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+    "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
+ <!ENTITY legal SYSTEM "legal.xml">
+  <!ENTITY appversion "2.4">
+  <!ENTITY manrevision "2.1">
+  <!ENTITY date "January 2003">
+  <!ENTITY app "<application>Gfloppy</application>">
+
+]>
+<!-- =============Document Header ============================= -->
+
+<article>
+ <articleinfo> 
+    <title>Gfloppy Handleiding V&manrevision;</title>       
+
+    <copyright> 
+      <year>2000</year> 
+      <holder>Kenny Graunke</holder> 
+    </copyright> 
+    <copyright> 
+      <year>2002</year> 
+      <holder>John Fleck</holder> 
+    </copyright>
+    <copyright>
+      <year>2003</year>
+      <holder>Baris Cicek</holder>
+		</copyright>
+
+  <copyright>
+   <year>2005</year>
+   <holder>Myckel Habets (Nederlandstalige Documentatie)</holder>
+  </copyright>
+
+
+    <publisher> 
+      <publishername> GNOME Documentatie Project </publishername> 
+    </publisher> 
+
+   &legal;
+   
+    <authorgroup> 
+      <author> 
+		<firstname>Baris</firstname> 
+		<surname>Cicek</surname> 
+		<affiliation> 
+	  		<orgname>GNOME Documentatie Project</orgname> 
+	  		<address> <email>bcicek@phreaker.net</email> </address> 
+		</affiliation> 
+      </author> 
+
+      <author> 
+		<firstname>John</firstname> 
+		<surname>Fleck</surname> 
+		<affiliation> 
+	  		<orgname>GNOME Documentatie Project</orgname> 
+	  		<address> <email>jfleck@inkstain.net</email> </address> 
+		</affiliation> 
+      </author> 
+      <author> 
+		<firstname>Kenny</firstname> 
+		<surname>Graunke</surname> 
+		<affiliation> 
+	  		<orgname>GNOME Documentatie Project</orgname> 
+	</affiliation> 
+      </author> 
+      
+     
+      <othercredit role="translator">
+		<firstname>Myckel</firstname> 
+		<surname>Habets</surname> 
+		<affiliation> 
+	  		<address> <email>myckel@sdf.lonestar.org</email> </address> 
+		</affiliation>
+		<contrib>Nederlandstalige Documentatie</contrib>
+      </othercredit>
+    </authorgroup>
+
+
+<!-- According to GNU FDL, revision history is mandatory if you are -->
+<!-- modifying/reusing someone else's document.  If not, you can omit it. -->
+<!-- Remember to remove the &manrevision; entity from the revision entries other
+-->
+<!-- than the current revision. -->
+<!-- The revision numbering system for GNOME manuals is as follows: -->
+<!-- * the revision number consists of two components -->
+<!-- * the first component of the revision number reflects the release version of the GNOME desktop. -->
+<!-- * the second component of the revision number is a decimal unit that is incremented with each revision of the manual. -->
+<!-- For example, if the GNOME desktop release is V2.x, the first version of the manual that -->
+<!-- is written in that desktop timeframe is V2.0, the second version of the manual is V2.1, etc. -->
+<!-- When the desktop release version changes to V3.x, the revision number of the manual changes -->
+<!-- to V3.0, and so on. -->  
+    <revhistory>
+      <revision> 
+		<revnumber>Gfloppy Handleiding V&manrevision;</revnumber> 
+		<date>&date;</date> 
+		<revdescription> 
+	  		<para role="author">Baris Cicek
+	    	<email>bcicek@phreaker.net</email>
+	  		</para>
+	  		<para role="publisher">GNOME Documentatie Project</para>
+		</revdescription> 
+      </revision> 
+
+      <revision> 
+		<revnumber>Gfloppy Handleiding V4.0</revnumber> 
+		<date>Juni
+		 2002</date> 
+		<revdescription> 
+	  		<para role="author">John Fleck
+	    	<email>jfleck@inkstain.net</email>
+	  		</para>
+	  		<para role="publisher">GNOME Documentatie Project</para>
+		</revdescription> 
+      </revision> 
+
+      <revision> 
+		<revnumber>Gfloppy Handleiding</revnumber> 
+		<date>2000</date> 
+		<revdescription> 
+	  		<para role="author">Kenny Graunke
+	    	
+	  		</para>
+	  		<para role="publisher">GNOME Documentatie Project</para>
+		</revdescription> 
+      </revision> 
+    </revhistory> 
+
+    <releaseinfo>Deze handleiding beschrijft versie &appversion; van de Gfloppy handleiding.
+    </releaseinfo> 
+    <legalnotice> 
+      <title>Feedback</title> 
+      <para>Om een bug te rapporteren of een suggestie te doen over de &app; toepassing of
+      deze handleiding, volg de beschrijvingen in de 
+      <ulink url="ghelp:gnome-feedback" type="help">GNOME Feedback Pagina</ulink>.
+      </para>
+<!-- Translators may also add here feedback address for translations -->
+    </legalnotice> 
+  </articleinfo> 
+<!--
+  <indexterm zone="index"> 
+    <primary>Gfloppy Handleiding</primary> 
+  </indexterm> 
+  <indexterm zone="index"> 
+    <primary>gfloppy</primary> 
+  </indexterm>
+-->
+ <!-- ============= Document Body ============================= -->
+
+ <!-- ============= Introduction ============================== -->
+ <sect1 id="intro">
+  <title>Introductie</title>
+
+  <para>
+   <application>Diskettes formatteren</application> formatteert diskettes voor
+   gebruik op Linux. Nieuwe diskettes moeten soms geformatteerd worden, voordat
+   ze gebruikt kunnen worden.
+  </para>
+
+  <para>
+   Om <application>Diskettes formatteren</application> te starten, selecteer
+   <guimenuitem>Diskettes formatteren</guimenuitem> van het
+   <guisubmenu>Systeem</guisubmenu> submenu van het <guimenu>Toepassingen
+   Menu</guimenu>, <!-- right-click on the floppy icon on your desktop and
+   select <guisubmenu>Format Floppy</guisubmenu>, -->of typ
+   <command>gfloppy</command> op de commando-regel. 
+  </para>
+
+  <para>
+  Dit document beschrijft versie &appversion; van
+   <application>Diskettes formatteren</application>.
+  </para>
+
+ </sect1>
+
+
+ <!-- ================ Usage ================================ -->
+
+ <sect1 id="usage">
+  <title>Gebruik</title>
+   <para>
+    Als u <application>Diskettes formatteren</application> opstart, zal het
+    <interface>Hoofdvenster</interface> openen, zoals te zien is in <xref linkend="gfloppymainwindow"/>.
+      <figure id="gfloppymainwindow">
+	<title>Hoofdvenster van Diskettes formatteren</title>
+      <screenshot>
+	<screeninfo>Hoofdvenster van Diskettes formatteren</screeninfo>
+	<mediaobject>
+	  <imageobject>
+	    <imagedata fileref="figures/main.png" format="PNG" />
+	  </imageobject>
+      <imageobject>
+	<imagedata fileref="figures/main.eps" format="EPS" />
+    </imageobject>
+      <textobject>
+	<phrase>Hoofdvenster van Diskettes formatteren</phrase>
+      </textobject>
+      <caption><para>Hoofdvenster van Diskettes formatteren</para></caption>
+    </mediaobject>
+      
+     </screenshot>
+   </figure>
+   </para>
+
+   <para>
+    Doe een niet tegen schrijven beveiligde diskette in het diskettestation.
+   </para>
+
+   <warning>
+    <title>Waarschuwing</title>
+    <para>
+     Tijdens het formatteren van een diskette zullen alle bestanden op de diskette
+     gewist worden. Formatteer geen diskettes die bestanden bevatten die u wilt bewaren.
+    </para>
+   </warning>
+  <para>
+    Diskettes formatteren moet weten wat de dichtheid van uw diskette is, dit is de
+    hoeveelheid gegevens de diskette kan opslaan.  Meeste diskettes tegenwoordig zijn
+    Hoge Dichtheid, 1.44MB 3.5".
+   </para>
+
+   <para>
+    Selecteer het type bestandssysteem. Als u de diskette onder DOS of windows
+    moet kunnen gebruiken, kies <guibutton>DOS (FAT)</guibutton>. Anders kies
+    <guibutton>Linux Formaat (ext2)</guibutton>. Linux formaat kan op de
+    meeste niet-Linux machines niet gelezen worden.
+   </para>
+	 <para>
+		U kan ook een <guibutton>Volumenaam</guibutton> aan uw geformatteerde
+		diskettes meegeven. Doe dit door uw volumenaam in het tekstveld
+		onder de <guibutton>Bestandssysteem-instellingen</guibutton> in te vullen.
+	 </para>
+
+	 <para>
+		Als laatste moet u nog een formatteermodus opgeven.
+		<variablelist>
+	  <varlistentry><term><guibutton>Snel</guibutton></term>
+		<listitem>
+			<para>
+			Een snelle format is het snelst, maar controlleert de diskette niet op
+			defecte gebieden. Het verwijdert gewoon de bestandstabel, dus theoretisch
+			zijn de gegevens te herstellen.
+			</para>
+		</listitem>
+		</varlistentry>
+		<varlistentry><term><guibutton>Standaard</guibutton></term>
+		<listitem>
+			<para>
+			Standaard format is een formattering op laag niveau, maar controlleert de diskette
+			niet op defecte gebieden. Dus als u een defecte diskette heeft, zal de formattering
+			falen.
+			</para>	
+		</listitem>
+		</varlistentry>
+		<varlistentry><term><guibutton>Volledig</guibutton></term>
+		<listitem>
+			<para>
+			De volledige formattering controlleert de diskette op slechte gebieden
+			en voert dan een formattering op laag niveau uit.
+			</para>
+		</listitem>
+		</varlistentry>
+		</variablelist>
+		</para>
+<!--
+   <para>
+    Quick format is faster but does not check your floppy disk for bad
+    "blocks". The slower regular format is useful if you have not formatted your
+    floppy before, or if you suspect your disk might be bad.
+   </para>
+-->
+   <para>
+    Klik op de <guibutton>Formatteren</guibutton> knop om de diskette te formatteren,
+    zoals te zien is in deze afbeeldingen.
+   </para>
+
+    <para>U ziet een reeks dialogen die u informeren dat
+    <application>Diskettes formatteren</application> uw diskette aan het formatteren en
+    verifiëren is en dat er een bestandssysteem aangemaakt wordt.</para>
+
+   <para>
+      Tenzij u <guibutton>Snel</guibutton> of <guibutton>Standaard</guibutton> als
+      formatteermodus kiest, zal
+    <application>Diskette formatteren</application> op defecte gebieden
+    op uw diskette controlleren. Als <application>Diskette formatteren</application> 
+    defecte gebieden vindt, is dit een teken dat uw diskette aan vervanging toe is.
+    </para>
+
+   <para>
+      <application>Diskette formatteren</application> laat u weten als de formattering
+      goed gelukt is en zal u het hoofdvenster teruggeven.
+      </para>
+  </sect1>
+
+ <sect1 id="troubleshooting">
+  <title>Probleemoplossing</title>
+   <para>
+   Als er geen floppy in het diskettestation zit, zal Diskette formatteren
+   u een melding geven dat de diskette niet benaderd kan worden.
+	</para>
+	<para>
+	Als uw diskette tegen schrijven beveiligd is, zal Diskette formatteren u ook
+	waarschuwen. Om deze beveiliging weg te halen, haal de diskette uit het 
+	diskettestation en draai het om. Standaard 3.5 inch diskettes hebben een klein
+	schuifje in de hoek links-boven van de diskette. Schuif het schuifje naar beneden
+	zodat het gaatje overdekt wordt door het schuifje. Als de diskette geen schuifje
+	heeft, is het permanent beveiligd tegen schrijven.
+	</para>
+<!--
+      <screenshot id="writeprotected">
+	<mediaobject>
+	  <imageobject>
+	    <imagedata fileref="figures/writeprotected.png" format="PNG"/>
+    </imageobject>
+      <imageobject>
+	<imagedata fileref="figures/writeprotected.eps" format="EPS"/>
+    </imageobject>
+      <textobject>
+	<phrase>Write protected</phrase>
+      </textobject>
+      <caption>
+	<para>Write protected</para>
+      </caption>
+    </mediaobject>
+    </screenshot>
+    </para>
+
+
+   <para>
+    If you cannot choose to format DOS floppies, as shown in <xref
+    linkend="nodos"/>, you need to install <filename>mtools</filename>.
+   </para>
+   <tip>
+    <title>Tip</title>
+    <para>
+     On an RPM based system, such as Red Hat, you can install <filename>
+     mtools</filename> using <ulink
+     url="gnome-help:gnorpm"><application>GnoRPM</application></ulink>, from the
+     <guisubmenu>System</guisubmenu> of
+     the <guimenu>Main Menu</guimenu>.
+    </para>
+   </tip>
+   <para>
+      <screenshot id="nodos">
+	<mediaobject>
+	  <imageobject>
+	    <imagedata fileref="figures/nodos.png" format="PNG"/>
+    </imageobject>
+      <imageobject>
+	<imagedata fileref="figures/nodos.eps" format="EPS"/>
+    </imageobject>
+      <textobject>
+	<phrase>Cannot format DOS floppies</phrase>
+      </textobject>
+      <caption>
+	<para>Cannot format DOS floppies</para>
+      </caption>
+    </mediaobject>
+    </screenshot>
+   </para>
+-->
+ </sect1>
+
+ <sect1 id="bugs">
+  <title>Bekende Bugs en Beperkingen</title>
+  <para>
+    Diskette formatteren werkt alleen op Linux.
+  </para>
+ </sect1>
+
+<!-- ============= Authors ================================ -->
+
+ <sect1 id="authors">
+  <title>Auteurs</title>
+  <para>
+   <application>Diskette formatteren</application> is geschreven door Jonathan Blandford
+   (<email>jrb@redhat.com</email>). Stuur alle commentaar, suggesties en bug rapporten
+   naar de <ulink url="http://bugzilla.gnome.org" type="http">
+   GNOME bug tracking database</ulink>. Als u GNOME 1.1 of hoger gebruikt kan u ook het
+   <application>Bug Rapportage Programma</application>
+   (<command>bug-buddy</command>) gebruiken. U kunt dit programma in het
+   <guisubmenu>Ontwikkeling</guisubmenu> submenu van het <guimenu>Toepassingen</guimenu>,
+   menu vinden.
+  </para>
+
+  <para>
+   Deze handleiding is geschreven door Baris Cicek
+   (<email>bcicek@phreaker.net</email>). Stuur alle commentaar en suggesties met
+   betrekking tot deze handleiding naar het <ulink type="http"
+   url="http://developer.gnome.org/projects/gdp/">GNOME Documentatie Project</ulink> 
+   door een e-mail naar <email>docs@gnome.org</email> te sturen. U kan ook uw commentaar
+   online geven door gebruik te maken van de <ulink type="http"
+   url="http://developer.gnome.org/projects/gdp/doctable/">GNOME Documentatie
+   Status Tabel</ulink>.
+  </para>
+
+  <para>
+    Nederlandstalige vertaling is gedaan door Myckel Habets
+   (<email>myckel@sdf.lonestar.org</email>).
+  </para>
+
+
+ </sect1>
+
+
+ <!-- ============= Application License ============================= -->
+
+ <sect1 id="license">
+  <title>License</title>
+  <para>
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the <ulink url="ghelp:gpl"><citetitle>GNU General Public
+   License</citetitle></ulink> as published by the Free Software Foundation;
+   either version 2 of the License, or (at your option) any later
+   version.
+  </para>
+  <para>
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the <ulink
+   url="ghelp:gpl"><citetitle>GNU General Public
+   License</citetitle></ulink> for more details.
+  </para>
+  <para>
+   A copy of the <citetitle>GNU General Public License</citetitle> is
+   included as an appendix to the <citetitle>GNOME Users
+   Guide</citetitle>.  You may also obtain a copy of the
+   <citetitle>GNU General Public License</citetitle> from the Free
+   Software Foundation by visiting <ulink type="http"
+   url="http://www.fsf.org">their Web site</ulink> or by writing to
+   <address>
+    Free Software Foundation, Inc.
+    <street>59 Temple Place</street> - Suite 330
+    <city>Boston</city>, <state>MA</state> <postcode>02111-1307</postcode>
+    <country>USA</country>
+   </address>
+  </para>
+ </sect1>
+</article>
+
