@@ -44,6 +44,8 @@ format_volume_free(FormatVolume* fvol)
 	libhal_volume_free(fvol->volume);
 	if(fvol->icon)
 		g_object_unref(fvol->icon);
+	if(fvol->friendly_name)
+		g_free(fvol->friendly_name);
 	g_free(fvol);
 }
 
@@ -202,6 +204,9 @@ build_volume_list(LibHalContext* ctx,
 
 		device_list = g_slist_prepend(device_list, current);
 	}
+	
+	if(device_udis)
+		libhal_free_string_array(device_udis);
 
 out:
 	return device_list;

@@ -36,7 +36,7 @@ struct FormatVolume {
 	LibHalVolume *volume;		
 	LibHalDrive *drive;
 	GdkPixbuf* icon;
-	const gchar* friendly_name;
+	gchar* friendly_name;
 };
 
 enum FormatVolumeType {
