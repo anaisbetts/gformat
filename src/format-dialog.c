@@ -1,7 +1,8 @@
 /*
- * gnome-format-dialog.c - initialize dialog
+ * format-dialog.c - initialize dialog
  *
  * Copyright 2007 Riccardo Setti <giskard@autistici.org>
+ * 		  Paul Betts <paul.betts@gmail.com>
  *
  *
  * License:
@@ -83,9 +84,6 @@ setup_volume_treeview (FormatDialog* dialog)
 	/* udi, icon, name, sensitive */
 	model = gtk_tree_store_new(4, G_TYPE_STRING, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_BOOLEAN);
 	gtk_combo_box_set_model(combo, GTK_TREE_MODEL(model));
-	gtk_tree_store_insert_with_values(model, NULL, NULL, 0, 
-			COLUMN_NAME_MARKUP, _("<i>No devices found</i>"), 
-			COLUMN_SENSITIVE, FALSE, -1);
 
 	/* Set up the column */
 	gtk_cell_layout_pack_start( GTK_CELL_LAYOUT(combo), (icon_renderer = gtk_cell_renderer_pixbuf_new()), FALSE /* expand? */);
@@ -94,8 +92,55 @@ setup_volume_treeview (FormatDialog* dialog)
 	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), icon_renderer, "sensitive", COLUMN_SENSITIVE );
 	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), text_renderer, "markup", COLUMN_NAME_MARKUP );
 	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), text_renderer, "sensitive", COLUMN_SENSITIVE );
+
+	/* Do some miscellaneous things */
+	dialog->icon_cache = create_icon_cache();
+	dialog->volume_model = model;
 }
 
+static void
+rebuild_volume_combo(FormatDialog* dlg)
+{
+	g_assert(dlg && dlg->volume_model);
+
+	gboolean show_partitions = gtk_toggle_button_get_active(dlg->show_partitions);
+	GSList* volume_list = build_volume_list(dlg->hal_context, 
+			(show_partitions ? FORMATVOLUMETYPE_VOLUME : FORMATVOLUMETYPE_DRIVE),
+			dlg->icon_cache, 22, 22);
+
+	/* Iterate through the volume list and build the tree model */
+	GSList* iter;	gboolean not_empty = FALSE, can_format;
+	FormatVolume* current;
+
+	gtk_tree_store_clear(dlg->volume_model);
+	for(iter = volume_list; iter != NULL; iter=iter->next) {
+		current = iter->data;
+		can_format = (current->volume || 
+				!libhal_drive_uses_removable_media(current->drive) ||
+				libhal_drive_is_media_detected(current->drive));
+
+		if(!current->friendly_name || strlen(current->friendly_name) == 0)
+			continue;
+
+		/* FIXME: It'd be nice if the partitions were a subset of the
+		 * drive that owned them */
+		gtk_tree_store_insert_with_values(dlg->volume_model, NULL, NULL, 0,
+			COLUMN_NAME_MARKUP, current->friendly_name, 
+			COLUMN_ICON, current->icon, 
+			COLUMN_SENSITIVE, can_format, -1);
+
+		not_empty = TRUE;
+	}
+
+	if(!not_empty) {
+		gtk_tree_store_insert_with_values(dlg->volume_model, NULL, NULL, 0, 
+				COLUMN_NAME_MARKUP, _("<i>No devices found</i>"), 
+				COLUMN_SENSITIVE, FALSE, -1);
+	}
+
+	if(volume_list)
+		format_volume_list_free(volume_list);
+}
 
 /*
  * Event handlers
@@ -129,7 +174,8 @@ on_toplevel_delete_event(GtkWidget* w, gpointer user_data)
 void
 on_show_partitions_toggled(GtkWidget* w, gpointer user_data) 
 {
-	/* TODO: Refresh the dialog */
+	FormatDialog* dlg = g_object_get_data( G_OBJECT(gtk_widget_get_toplevel(w)), "userdata" );
+	rebuild_volume_combo(dlg);
 }
 	
 
@@ -140,8 +186,6 @@ on_show_partitions_toggled(GtkWidget* w, gpointer user_data)
 FormatDialog*
 format_dialog_new(void)
 {
-	GtkWidget *window;
-
 	FormatDialog *dialog;
 	dialog = g_new0 (FormatDialog, 1);
 
@@ -166,19 +210,21 @@ format_dialog_new(void)
 
 	dialog->toplevel = glade_xml_get_widget (dialog->xml, "toplevel");
 	dialog->volume_combo = GTK_COMBO_BOX(glade_xml_get_widget(dialog->xml, "volume_combo"));
+	dialog->show_partitions = GTK_TOGGLE_BUTTON(glade_xml_get_widget(dialog->xml, "show_partitions"));
 	g_assert(dialog->toplevel != NULL);
 
-	/* Get a HAL context and build a device list; if we can't, bail */
+	/* Get a HAL context; if we can't, bail */
 	dialog->hal_context = libhal_context_alloc();
-	GSList* list = build_volume_list(dialog->hal_context, FORMATVOLUMETYPE_DRIVE);
 
 	glade_xml_signal_autoconnect(dialog->xml);
 	g_object_set_data(G_OBJECT(dialog->toplevel), "userdata", dialog);
-	setup_volume_treeview(dialog);
+	setup_volume_treeview(dialog);	
+	rebuild_volume_combo(dialog);
+
 	gtk_widget_show_all (dialog->toplevel);
 
 	/* We do this here so they at least see the window before we die */
-	if( !dialog->hal_context || !list) {
+	if( !dialog->hal_context ) {
 		show_error_dialog(dialog->toplevel, 
 				_("Cannot get list of disks"), 
 				_("Make sure the HAL daemon is running and configured correctly"));
@@ -193,5 +239,10 @@ void format_dialog_free(FormatDialog* obj)
 {
 	if(obj->hal_context)
 		libhal_ctx_free(obj->hal_context);
+	
+	/* We have destroy notify hooks, so we don't worry about what's inside */
+	if(obj->icon_cache)
+		g_hash_table_destroy(obj->icon_cache);
+
 	g_free(obj);
 }

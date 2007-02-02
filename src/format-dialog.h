@@ -27,9 +27,14 @@
 typedef struct _FormatDialog {
 	GladeXML* xml;
 	GtkWidget* toplevel;
+
+	/* Stuff for device list */
 	GtkTreeStore* volume_model;
 	GtkComboBox* volume_combo;
+	GtkToggleButton* show_partitions;
 	LibHalContext* hal_context;
+	GHashTable* icon_cache;
+
 } FormatDialog;
 
 FormatDialog* format_dialog_new(void);
