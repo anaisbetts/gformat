@@ -21,11 +21,18 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+#ifndef _FORMAT_DIALOG_H
+#define _FORMAT_DIALOG_H
+
 typedef struct _FormatDialog {
 	GladeXML* xml;
 	GtkWidget* toplevel;
 	GtkTreeStore* volume_model;
 	GtkComboBox* volume_combo;
+	LibHalContext* hal_context;
 } FormatDialog;
 
 FormatDialog* format_dialog_new(void);
+void format_dialog_free(FormatDialog* obj);
+
+#endif

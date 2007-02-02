@@ -168,11 +168,30 @@ format_dialog_new(void)
 	dialog->volume_combo = GTK_COMBO_BOX(glade_xml_get_widget(dialog->xml, "volume_combo"));
 	g_assert(dialog->toplevel != NULL);
 
+	/* Get a HAL context and build a device list; if we can't, bail */
+	dialog->hal_context = libhal_context_alloc();
+	GSList* list = build_volume_list(dialog->hal_context, FORMATVOLUMETYPE_DRIVE);
+
 	glade_xml_signal_autoconnect(dialog->xml);
 	g_object_set_data(G_OBJECT(dialog->toplevel), "userdata", dialog);
 	setup_volume_treeview(dialog);
 	gtk_widget_show_all (dialog->toplevel);
 
+	/* We do this here so they at least see the window before we die */
+	if( !dialog->hal_context || !list) {
+		show_error_dialog(dialog->toplevel, 
+				_("Cannot get list of disks"), 
+				_("Make sure the HAL daemon is running and configured correctly"));
+		return NULL;
+	}
+
 	return dialog;
 }
 
+
+void format_dialog_free(FormatDialog* obj)
+{
+	if(obj->hal_context)
+		libhal_ctx_free(obj->hal_context);
+	g_free(obj);
+}

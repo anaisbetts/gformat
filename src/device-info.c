@@ -107,7 +107,7 @@ build_volume_list(LibHalContext* ctx, enum FormatVolumeType type)
 		capability = "volume";
 		break;
 	case FORMATVOLUMETYPE_DRIVE:
-		capability = "volume";
+		capability = "storage";
 		break;
 	}
 
@@ -119,9 +119,37 @@ build_volume_list(LibHalContext* ctx, enum FormatVolumeType type)
 	}
 
 	/* Now we use libhal-storage to get the info */
+	FormatVolume* current;
 	for(i=0; i < device_udi_count; i++) {
+		current = g_new0(FormatVolume, 1);
 
+		g_warning("udi: %s", device_udis[i]);
+		switch(type) {
+		case FORMATVOLUMETYPE_VOLUME:
+			current->volume = libhal_volume_from_udi(ctx, device_udis[i]);
+			current->icon = NULL;
+			if(!current->volume) {
+				g_free(current);
+				continue;
+			}
+			break;
+
+		case FORMATVOLUMETYPE_DRIVE:
+			current->drive = libhal_drive_from_udi(ctx, device_udis[i]);
+			g_warning("Icon drive: %s; Icon volume: %s",
+					libhal_drive_get_dedicated_icon_drive(current->drive),
+					libhal_drive_get_dedicated_icon_volume(current->drive));
+			current->icon = NULL; /* FIXME! */
+			if(!current->drive) {
+				g_free(current);
+				continue;
+			}
+			break;
+		}
+
+		device_list = g_slist_prepend(device_list, current);
 	}
+
 out:
 	return device_list;
 }

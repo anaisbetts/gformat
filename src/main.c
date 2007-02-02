@@ -63,7 +63,10 @@ main (int argc, char *argv[])
 
 	FormatDialog *dialog;
 	dialog = format_dialog_new();
-	gtk_main ();
+	if(dialog != NULL) {
+		gtk_main ();
+		format_dialog_free(dialog);
+	}
 
 	return 0;
 
