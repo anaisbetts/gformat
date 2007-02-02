@@ -40,7 +40,14 @@
 #include <libhal-storage.h>
 
 #include "format-dialog.h"
-#include "format-blockdevice.h"
+#include "device-info.h"
+
+enum {
+	COLUMN_UDI = 0,
+	COLUMN_ICON,
+	COLUMN_NAME_MARKUP,
+	COLUMN_SENSITIVE,
+};
 
 
 /*
@@ -65,6 +72,29 @@ show_error_dialog (GtkWidget *parent, gchar *main, gchar *secondary)
 	gtk_widget_destroy (dialog);
 }
 
+static void 
+setup_volume_treeview (FormatDialog* dialog)
+{
+	GtkTreeStore* model;
+	GtkCellRenderer* icon_renderer;
+	GtkCellRenderer* text_renderer;
+	GtkComboBox* combo = dialog->volume_combo;
+
+	/* udi, icon, name, sensitive */
+	model = gtk_tree_store_new(4, G_TYPE_STRING, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_BOOLEAN);
+	gtk_combo_box_set_model(combo, GTK_TREE_MODEL(model));
+	gtk_tree_store_insert_with_values(model, NULL, NULL, 0, 
+			COLUMN_NAME_MARKUP, _("<i>No devices found</i>"), 
+			COLUMN_SENSITIVE, FALSE, -1);
+
+	/* Set up the column */
+	gtk_cell_layout_pack_start( GTK_CELL_LAYOUT(combo), (icon_renderer = gtk_cell_renderer_pixbuf_new()), FALSE /* expand? */);
+	gtk_cell_layout_pack_start( GTK_CELL_LAYOUT(combo), (text_renderer = gtk_cell_renderer_text_new()), TRUE );
+	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), icon_renderer, "pixbuf", COLUMN_ICON );
+	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), icon_renderer, "sensitive", COLUMN_SENSITIVE );
+	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), text_renderer, "markup", COLUMN_NAME_MARKUP );
+	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), text_renderer, "sensitive", COLUMN_SENSITIVE );
+}
 
 
 /*
@@ -90,6 +120,18 @@ on_close_button_clicked(GtkWidget* w, gpointer user_data)
 	gtk_main_quit();
 }
 
+void
+on_toplevel_delete_event(GtkWidget* w, gpointer user_data)
+{
+	gtk_main_quit();
+}
+
+void
+on_show_partitions_toggled(GtkWidget* w, gpointer user_data) 
+{
+	/* TODO: Refresh the dialog */
+}
+	
 
 /*
  * Public functions
@@ -123,9 +165,12 @@ format_dialog_new(void)
 	} 
 
 	dialog->toplevel = glade_xml_get_widget (dialog->xml, "toplevel");
+	dialog->volume_combo = GTK_COMBO_BOX(glade_xml_get_widget(dialog->xml, "volume_combo"));
 	g_assert(dialog->toplevel != NULL);
 
 	glade_xml_signal_autoconnect(dialog->xml);
+	g_object_set_data(G_OBJECT(dialog->toplevel), "userdata", dialog);
+	setup_volume_treeview(dialog);
 	gtk_widget_show_all (dialog->toplevel);
 
 	return dialog;

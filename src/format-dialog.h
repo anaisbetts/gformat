@@ -24,7 +24,8 @@
 typedef struct _FormatDialog {
 	GladeXML* xml;
 	GtkWidget* toplevel;
-	GtkTreeStore* model;
+	GtkTreeStore* volume_model;
+	GtkComboBox* volume_combo;
 } FormatDialog;
 
 FormatDialog* format_dialog_new(void);

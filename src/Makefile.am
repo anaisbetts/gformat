@@ -4,6 +4,7 @@ INCLUDES = \
 	-DGNOMELOCALEDIR=\""$(gnomeutilslocaledir)"\"	\
         -DGLADEDIR=\""$(gladedir)"\"           	\
         -DDATADIR=\""$(datadir)"\"		\
+	-I. -Wall				\
 	$(GFLOPPY_CFLAGS)			\
 	$(LIBGLADE_CFLAGS)			\
 	$(HAL_CFLAGS)
@@ -16,15 +17,11 @@ gladedir = $(pkgdatadir)/glade
 glade_DATA = gformat.glade
 
 gformat_SOURCES = \
-	./format-blockdevice.c \
-	./format-blockdevice.h \
-	./format-dialog.c \
-	./format-dialog.h \
-	./logger.c \
-	./logger.h \
-	./main.c \
-	./partutil.c \
-	./partutil.h 
+	device-info.c \
+	format-dialog.c \
+	logger.c \
+	main.c \
+	partutil.c
 
 gformat_LDADD = $(GFLOPPY_LIBS) ${LIBGLADE_LIBS} $(HAL_LIBS) 
 

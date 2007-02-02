@@ -28,12 +28,13 @@
 #  include <config.h>
 #endif
 
+#include <sys/time.h>
+#include <linux/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 #include <time.h>
-#include <sys/time.h>
 #include <syslog.h>
 #include <unistd.h>
 
@@ -143,8 +144,8 @@ logger_emit (const char *format, ...)
 	char logmsg[1024];
 	struct timeval tnow;
 	struct tm *tlocaltime;
-	struct timezone tzone;
-	static pid_t pid = -1;
+	/*struct timezone tzone;*/
+	static int pid = -1;
 
 	if (!is_enabled)
 		return;
@@ -171,7 +172,7 @@ logger_emit (const char *format, ...)
 			break;
 	}
 
-	gettimeofday (&tnow, &tzone);
+	gettimeofday (&tnow, NULL);
 	tlocaltime = localtime (&tnow.tv_sec);
 	strftime (tbuf, sizeof (tbuf), "%H:%M:%S", tlocaltime);
 
@@ -215,8 +216,8 @@ logger_forward_debug (const char *format, ...)
         char tbuf[256];
         struct timeval tnow;
         struct tm *tlocaltime;
-        struct timezone tzone;
-        static pid_t pid = -1;
+        /*struct timezone tzone;*/
+        static int pid = -1;
 
         if (!is_enabled)
                 return;
@@ -227,7 +228,7 @@ logger_forward_debug (const char *format, ...)
 	va_start (args, format);
         vsnprintf (buf, sizeof (buf), format, args);
 
-        gettimeofday (&tnow, &tzone);
+        gettimeofday (&tnow, NULL);
         tlocaltime = localtime (&tnow.tv_sec);
         strftime (tbuf, sizeof (tbuf), "%H:%M:%S", tlocaltime);
 
