@@ -108,6 +108,13 @@ rebuild_volume_combo(FormatDialog* dlg)
 			(show_partitions ? FORMATVOLUMETYPE_VOLUME : FORMATVOLUMETYPE_DRIVE),
 			dlg->icon_cache, 22, 22);
 
+	if(!volume_list) {
+		show_error_dialog(dlg->toplevel, 
+				_("Cannot get list of disks"), 
+				_("Make sure the HAL daemon is running and configured correctly"));
+		return;
+	}
+
 	/* Iterate through the volume list and build the tree model */
 	GSList* iter;	gboolean not_empty = FALSE, can_format;
 	FormatVolume* current;

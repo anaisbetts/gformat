@@ -33,7 +33,9 @@
 #include <dbus/dbus-glib-lowlevel.h>
 
 #include <glib.h>
+#include <glib/gi18n.h>
 #include <gdk/gdk.h>
+#include <libgnomevfs/gnome-vfs-utils.h>
 
 #include "device-info.h"
 
@@ -130,6 +132,126 @@ GHashTable* create_icon_cache(void)
 	return g_hash_table_new_full(g_str_hash, g_str_equal, mem_free_cb, unref_free_cb);
 }
 
+static char*
+get_friendly_drive_name(LibHalDrive* drive)
+{
+	const char* ret;
+
+	/* Getting the name is tricky because we never know what info we have
+	 * so we have to fall-back all the time */
+	ret = libhal_drive_get_model(drive);
+	if(ret && ret[0] != 0)	goto out;
+
+	ret = libhal_drive_get_vendor(drive);
+	if(ret && ret[0] != 0)	goto out;
+
+	ret = libhal_drive_get_device_file(drive);
+	if(ret && ret[0] != 0)	goto out;
+
+	ret = _("(Unknown Device)");
+
+out:
+	return g_strdup(ret);
+}
+
+static gchar*
+get_friendly_drive_info(LibHalDrive* drive)
+{
+	const char* device_name;
+	gchar* friendly_size, *ret = NULL;
+	dbus_uint64_t size;
+
+	size = (libhal_drive_uses_removable_media(drive) ?
+			libhal_drive_get_media_size(drive) :
+			libhal_drive_get_size(drive));
+	friendly_size = (size > 0 ? 
+			gnome_vfs_format_file_size_for_display((GnomeVFSFileSize)size) :
+			NULL);
+
+	device_name = get_friendly_drive_name(drive);
+
+	if(friendly_size) {
+		ret = g_strdup_printf("%s - %s", device_name, friendly_size);
+		g_free(friendly_size);
+	}
+	else
+		ret = g_strdup(device_name);
+
+	return ret;
+}
+
+static char*
+get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume)
+{
+	char* ret, *tmp;
+	char* partition_name = NULL;
+	int partition_num;
+
+	ret = libhal_volume_get_label(volume);
+	if(ret && ret[0] != 0)	return g_strdup(ret);
+
+	/* Try to describe the device */
+	const char* assoc_udi = libhal_volume_get_storage_device_udi(volume);
+	LibHalDrive* assoc_drv = NULL;
+	if(assoc_udi) 	assoc_drv = libhal_drive_from_udi(ctx, assoc_udi);
+	if(assoc_drv) {
+		partition_num = (libhal_volume_is_partition(volume) ? 
+				(int)libhal_volume_get_partition_number(volume) :
+				-1);
+		if(partition_num > 0) {
+			/* Try to get the name */
+			tmp = libhal_volume_get_partition_label(volume);
+			if(tmp && tmp[0] != 0)
+				partition_name = g_strdup(tmp);
+			else
+				partition_name = g_strdup_printf(_("Partition %d"), partition_num);
+		}
+
+		tmp = get_friendly_drive_name(assoc_drv);
+		if(partition_name) {
+			ret = g_strdup_printf(_("%s on %s"), partition_name, tmp);
+			g_free(partition_name);
+		}
+		else {
+			ret = g_strdup_printf(_("(Unknown Volume) on %s"), tmp);
+		}
+		g_free(tmp);
+		return ret;
+	}
+
+	ret = _("(Unknown Volume)");
+
+	return g_strdup(ret);
+}
+
+static gchar*
+get_friendly_volume_info(LibHalContext* ctx, LibHalVolume* volume)
+{
+	char* device_name;
+	gchar* friendly_size, *ret = NULL;
+	dbus_uint64_t size;
+
+	size = libhal_volume_get_size(volume);
+	friendly_size = (size > 0 ? 
+			gnome_vfs_format_file_size_for_display((GnomeVFSFileSize)size) :
+			NULL);
+
+	device_name = get_friendly_volume_name(ctx, volume);
+
+	if(friendly_size) {
+		ret = g_strdup_printf("%s - %s", device_name, friendly_size);
+		g_free(friendly_size);
+		g_free(device_name);
+	}
+	else
+		ret = device_name;
+
+
+	return ret;
+}
+
+
+
 GSList* 
 build_volume_list(LibHalContext* ctx, 
 		  enum FormatVolumeType type, 
@@ -177,7 +299,8 @@ build_volume_list(LibHalContext* ctx,
 			current->icon = NULL;
 
 			/* FIXME: Fill in the actual friendly name */
-			current->friendly_name = g_strdup(libhal_volume_get_uuid(current->volume));
+			current->friendly_name = get_friendly_volume_info(ctx, current->volume);
+			
 			break;
 
 		case FORMATVOLUMETYPE_DRIVE:
@@ -193,8 +316,7 @@ build_volume_list(LibHalContext* ctx,
 			icon_path = libhal_drive_get_dedicated_icon_drive(current->drive);
 			current->icon = load_icon_from_cache(icon_path, icon_cache, icon_width, icon_height);
 
-			/* FIXME: Fill in the actual friendly name */
-			current->friendly_name = g_strdup(libhal_drive_get_serial(current->drive));
+			current->friendly_name = get_friendly_drive_info(current->drive);
 
 			break;
 		}
