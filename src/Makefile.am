@@ -5,11 +5,11 @@ INCLUDES = \
         -DGLADEDIR=\""$(gladedir)"\"           	\
         -DDATADIR=\""$(datadir)"\"		\
 	-I. -Wall				\
-	$(GFLOPPY_CFLAGS)			\
+	$(GFORMAT_CFLAGS)			\
 	$(LIBGLADE_CFLAGS)			\
 	$(HAL_CFLAGS)
 
-bin_PROGRAMS = gformat
+bin_PROGRAMS = gnome-format
 
 AM_CFLAGS = -std=c99
 
