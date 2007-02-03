@@ -48,5 +48,7 @@ AC_SUBST(GFORMAT_LIBS)
 AC_OUTPUT([
 Makefile
 src/Makefile
+po/Makefile.in
+gnome-format.desktop.in
 ])
 

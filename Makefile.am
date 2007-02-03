@@ -3,24 +3,31 @@
 SUBDIRS = src 
 
 
-gnome_formatappdir = $(datadir)/applications
-gnome_formatapp_in_files = gnome-format.desktop.in
-gnome_formatapp_DATA = $(gnome_formatapp_in_files:.desktop.in=.desktop)
+desktop_in_files = gnome-format.desktop.in
+desktop_files = $(desktop_in_files:.desktop.in=.desktop)
+@INTLTOOL_DESKTOP_RULE@
 
-#@INTLTOOL_DESKTOP_RULE@
-#@INTLTOOL_KEYS_RULE@
+Applicationsdir = $(datadir)/applications
+Applications_DATA = $(desktop_files)
 
-schemasdir = $(GCONF_SCHEMA_FILE_DIR)
-schemas_in_file = gnome-format.schemas.in
-schemas_DATA = $(schemas_in_file:.schemas.in=.schemas)
-#@INTLTOOL_SCHEMAS_RULE@
+#schemasdir = $(GCONF_SCHEMA_FILE_DIR)
+#schemas_in_file = gnome-format.schemas.in
+#schemas_DATA = $(schemas_in_file:.schemas.in=.schemas)
+#INTLTOOL_SCHEMAS_RULE@
 
+INTLTOOL =                      \
+        intltool-extract.in     \
+        intltool-merge.in       \
+        intltool-update.in
+    
 EXTRA_DIST = \
-	$(gnome_formatapp_in_files) \
-	$(gnome_formatapp_DATA) \
-	$(schemas_in_file)
+	$(desktop_in_files) 
+	
+	#$(schemas_in_file) 
+	#$(schemas_DATA)
 
-install-data-local: gnome-format.desktop install-misc-local install-gconf-schemas
+install-data-local: gnome-format.desktop install-misc-local 
+#install-gconf-schemas
 
 install-misc-local:
 	@$(NORMAL_INSTALL)
@@ -46,4 +53,4 @@ dist-hook:
 
 CLEANFILES = 			\
 	gnome-format.desktop		\
-	gnome-format.schemas	
+	#gnome-format.schemas	
