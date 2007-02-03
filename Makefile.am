@@ -5,14 +5,14 @@ SUBDIRS = src
 
 gnome_formatappdir = $(datadir)/applications
 gnome_formatapp_in_files = gnome-format.desktop.in
-gnome_formatapp_DATA = $(gnome-formatapp_in_files:.desktop.in=.desktop)
+gnome_formatapp_DATA = $(gnome_formatapp_in_files:.desktop.in=.desktop)
 
 #@INTLTOOL_DESKTOP_RULE@
 #@INTLTOOL_KEYS_RULE@
 
 schemasdir = $(GCONF_SCHEMA_FILE_DIR)
 schemas_in_file = gnome-format.schemas.in
-schemas_DATA = $(schemas-in_file:.schemas.in=.schemas)
+schemas_DATA = $(schemas_in_file:.schemas.in=.schemas)
 #@INTLTOOL_SCHEMAS_RULE@
 
 EXTRA_DIST = \
