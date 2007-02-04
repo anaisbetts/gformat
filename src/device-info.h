@@ -39,6 +39,7 @@ struct FormatVolume {
 
 	LibHalDrive *drive;
 	gchar* udi;
+	gchar* mountpoint;
 
 	GdkPixbuf* icon;
 	gchar* friendly_name;
@@ -51,6 +52,11 @@ enum FormatVolumeType {
 
 void format_volume_free(FormatVolume* volume);
 void format_volume_list_free(GSList* volume_list);
+
+char* get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume);
+gchar* get_friendly_drive_info(LibHalDrive* drive);
+char* get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume);
+gchar* get_friendly_volume_info(LibHalContext* ctx, LibHalVolume* volume);
 
 GHashTable* create_icon_cache(void);
 GSList* build_volume_list(LibHalContext* ctx, 

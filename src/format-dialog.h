@@ -34,6 +34,8 @@ typedef struct _FormatDialog {
 	GtkToggleButton* show_partitions;
 	LibHalContext* hal_context;
 	GHashTable* icon_cache;
+	GtkLabel* extra_volume_info;
+	GtkHBox* extra_volume_hbox;
 
 } FormatDialog;
 

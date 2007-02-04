@@ -99,19 +99,19 @@ setup_volume_treeview (FormatDialog* dialog)
 }
 
 static void
-rebuild_volume_combo(FormatDialog* dlg)
+rebuild_volume_combo(FormatDialog* dialog)
 {
 	/* FIXME: This code got far too out of hand and as a result is very
 	 * hacky. However, it works, so there's that */
 
-	g_assert(dlg && dlg->volume_model);
+	g_assert(dialog && dialog->volume_model);
 
-	gboolean show_partitions = gtk_toggle_button_get_active(dlg->show_partitions);
-	GSList *drive_list = build_volume_list(dlg->hal_context, FORMATVOLUMETYPE_DRIVE,
-			dlg->icon_cache, 22, 22);
+	gboolean show_partitions = gtk_toggle_button_get_active(dialog->show_partitions);
+	GSList *drive_list = build_volume_list(dialog->hal_context, FORMATVOLUMETYPE_DRIVE,
+			dialog->icon_cache, 22, 22);
 
 	if(!drive_list) {
-		show_error_dialog(dlg->toplevel, 
+		show_error_dialog(dialog->toplevel, 
 				_("Cannot get list of disks"), 
 				_("Make sure the HAL daemon is running and configured correctly"));
 		return;
@@ -127,7 +127,7 @@ rebuild_volume_combo(FormatDialog* dlg)
 	FormatVolume* current;
 	GtkTreeIter* parent_treeiter, *current_treeiter;
 
-	gtk_tree_store_clear(dlg->volume_model);
+	gtk_tree_store_clear(dialog->volume_model);
 	while(device_list != NULL) {
 		for(iter = device_list; iter != NULL; iter=iter->next) {
 			current = iter->data;
@@ -143,14 +143,15 @@ rebuild_volume_combo(FormatDialog* dlg)
 			if(current->drive_udi)
 				parent_treeiter = g_hash_table_lookup(udi_table, current->drive_udi);
 			g_debug("Parent treeiter: 0x%p", parent_treeiter);
-			if(parent_treeiter && !gtk_tree_store_iter_is_valid(dlg->volume_model, parent_treeiter)) {
+			if(parent_treeiter && !gtk_tree_store_iter_is_valid(dialog->volume_model, parent_treeiter)) {
 				g_warning("Iter wasn't valid! 0x%p", parent_treeiter);
 				parent_treeiter = NULL;
 			}
 
 			treeiter_list = g_slist_prepend(treeiter_list, (current_treeiter = g_new0(GtkTreeIter, 1)) );
 
-			gtk_tree_store_insert_with_values(dlg->volume_model, current_treeiter, parent_treeiter, 0,
+			gtk_tree_store_insert_with_values(dialog->volume_model, current_treeiter, parent_treeiter, 0,
+				COLUMN_UDI, current->udi, 
 				COLUMN_NAME_MARKUP, current->friendly_name, 
 				COLUMN_ICON, current->icon, 
 				COLUMN_SENSITIVE, can_format, -1);
@@ -162,8 +163,8 @@ rebuild_volume_combo(FormatDialog* dlg)
 
 		if(!listed_drives && show_partitions) {
 			listed_drives = TRUE;
-			device_list = build_volume_list(dlg->hal_context, FORMATVOLUMETYPE_VOLUME,
-					dlg->icon_cache, 22, 22);
+			device_list = build_volume_list(dialog->hal_context, FORMATVOLUMETYPE_VOLUME,
+					dialog->icon_cache, 22, 22);
 		}
 		else {
 			format_volume_list_free(device_list);
@@ -181,10 +182,76 @@ rebuild_volume_combo(FormatDialog* dlg)
 		format_volume_list_free(drive_list);
 
 	if(!not_empty) {
-		gtk_tree_store_insert_with_values(dlg->volume_model, NULL, NULL, 0, 
+		gtk_tree_store_insert_with_values(dialog->volume_model, NULL, NULL, 0, 
 				COLUMN_NAME_MARKUP, _("<i>No devices found</i>"), 
 				COLUMN_SENSITIVE, FALSE, -1);
 	}
+}
+
+gchar*
+get_udi_from_iter(FormatDialog* dialog, GtkTreeIter* iter)
+{
+	char* ret;
+	GValue val = {0, };
+	gtk_tree_model_get_value(GTK_TREE_MODEL(dialog->volume_model), iter, COLUMN_UDI, &val);
+	ret = g_strdup(g_value_get_string(&val));
+	g_value_unset(&val);
+	return ret;
+}
+
+static void
+update_extra_info(FormatDialog* dialog)
+{
+	gboolean show_info = FALSE;
+	GtkLabel* info = dialog->extra_volume_info;
+
+	/* Right now we only have one thing to display but it's possible that
+	 * we might have more */
+
+	/* Check to see if this has a mountpoint */
+	do {
+		char buf[512];
+		GtkTreeIter iter;
+
+		if(!gtk_combo_box_get_active_iter(dialog->volume_combo, &iter))
+			break;
+
+		char* udi = get_udi_from_iter(dialog, &iter);
+		if(!udi) {
+			g_error("UDI of device was blank!");
+			break;
+		}
+		LibHalVolume* vol = libhal_volume_from_udi(dialog->hal_context, udi);
+		if(!vol) {
+			g_free(udi);
+			break;
+		}
+
+		const char* mountpoint = libhal_volume_get_mount_point(vol);
+		if(!mountpoint) {
+			g_free(udi);
+			libhal_volume_free(vol);
+			break;
+		}
+		char* vol_name = get_friendly_volume_name(dialog->hal_context, vol);
+
+		g_snprintf(buf, 512, _("<i>%s is currently mounted on %s</i>"), vol_name, mountpoint);
+		g_free(vol_name);
+		gtk_label_set_markup(dialog->extra_volume_info, buf);
+		show_info |= TRUE;
+	} while(0);
+
+	if(show_info)
+		gtk_widget_show_all(GTK_WIDGET(dialog->extra_volume_hbox));
+	else
+		gtk_widget_hide_all(GTK_WIDGET(dialog->extra_volume_hbox));
+}
+
+static void
+update_dialog(FormatDialog* dialog)
+{
+	rebuild_volume_combo(dialog);
+	update_extra_info(dialog);
 }
 
 /*
@@ -205,6 +272,13 @@ on_help_button_clicked (GtkWidget *w, gpointer user_data)
 }
 
 void
+on_volume_combo_changed(GtkWidget* w, gpointer user_data)
+{
+	FormatDialog* dialog = g_object_get_data( G_OBJECT(gtk_widget_get_toplevel(w)), "userdata" );
+	update_extra_info(dialog);
+}
+
+void
 on_close_button_clicked(GtkWidget* w, gpointer user_data)
 {
 	gtk_main_quit();
@@ -219,8 +293,8 @@ on_toplevel_delete_event(GtkWidget* w, gpointer user_data)
 void
 on_show_partitions_toggled(GtkWidget* w, gpointer user_data) 
 {
-	FormatDialog* dlg = g_object_get_data( G_OBJECT(gtk_widget_get_toplevel(w)), "userdata" );
-	rebuild_volume_combo(dlg);
+	FormatDialog* dialog = g_object_get_data( G_OBJECT(gtk_widget_get_toplevel(w)), "userdata" );
+	update_dialog(dialog);
 }
 	
 
@@ -256,6 +330,8 @@ format_dialog_new(void)
 	dialog->toplevel = glade_xml_get_widget (dialog->xml, "toplevel");
 	dialog->volume_combo = GTK_COMBO_BOX(glade_xml_get_widget(dialog->xml, "volume_combo"));
 	dialog->show_partitions = GTK_TOGGLE_BUTTON(glade_xml_get_widget(dialog->xml, "show_partitions"));
+	dialog->extra_volume_info = GTK_LABEL(glade_xml_get_widget(dialog->xml, "extra_volume_info"));
+	dialog->extra_volume_hbox = GTK_HBOX(glade_xml_get_widget(dialog->xml, "extra_volume_hbox"));
 	g_assert(dialog->toplevel != NULL);
 
 	/* Get a HAL context; if we can't, bail */
@@ -264,9 +340,9 @@ format_dialog_new(void)
 	glade_xml_signal_autoconnect(dialog->xml);
 	g_object_set_data(G_OBJECT(dialog->toplevel), "userdata", dialog);
 	setup_volume_treeview(dialog);	
-	rebuild_volume_combo(dialog);
 
 	gtk_widget_show_all (dialog->toplevel);
+	update_dialog(dialog);
 
 	/* We do this here so they at least see the window before we die */
 	if( !dialog->hal_context ) {

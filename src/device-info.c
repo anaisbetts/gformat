@@ -43,6 +43,7 @@ void
 format_volume_free(FormatVolume* fvol)
 {
 	g_assert(fvol != NULL);
+
 	if(fvol->volume)
 		libhal_volume_free(fvol->volume);
 	if(fvol->drive)
@@ -55,6 +56,9 @@ format_volume_free(FormatVolume* fvol)
 		g_free(fvol->udi);
 	if(fvol->drive_udi)
 		g_free(fvol->drive_udi);
+	if(fvol->mountpoint)
+		g_free(fvol->mountpoint);
+		
 	g_free(fvol);
 }
 
@@ -139,7 +143,7 @@ GHashTable* create_icon_cache(void)
 	return g_hash_table_new_full(g_str_hash, g_str_equal, mem_free_cb, unref_free_cb);
 }
 
-static char*
+char*
 get_friendly_drive_name(LibHalDrive* drive)
 {
 	const char* ret;
@@ -161,7 +165,7 @@ out:
 	return g_strdup(ret);
 }
 
-static gchar*
+gchar*
 get_friendly_drive_info(LibHalDrive* drive)
 {
 	const char* device_name;
@@ -187,7 +191,7 @@ get_friendly_drive_info(LibHalDrive* drive)
 	return ret;
 }
 
-static char*
+char*
 get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume)
 {
 	char* ret, *tmp;
@@ -200,12 +204,13 @@ get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume)
 	/* Try to describe the device */
 	const char* assoc_udi = libhal_volume_get_storage_device_udi(volume);
 
-  LibHalDrive* assoc_drv = NULL;
+	LibHalDrive* assoc_drv = NULL;
 	if(assoc_udi) 	assoc_drv = libhal_drive_from_udi(ctx, assoc_udi);
-  if(assoc_drv) {
+	if(assoc_drv) {
 		partition_num = (libhal_volume_is_partition(volume) ? 
 				(int)libhal_volume_get_partition_number(volume) :
 				-1);
+
 		if(partition_num > 0) {
 			/* Try to get the name */
 			tmp = libhal_volume_get_partition_label(volume);
@@ -214,36 +219,11 @@ get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume)
 			else
 				partition_name = g_strdup_printf(_("Partition %d"), partition_num);
 		}
-   
-    /* if we use libhal_device_get-property() instead of 
-     * libhal_volume_get_mount_mount_point() we have to setup DBusError and
-     * some other things, the problem is do we like to have (null) in the gui
-     * when libhal-storage cannot discover where a partition is mounted?
-     * if so we can remove the DBusError code and use the libhal-storage func
-     * to retrive the mount point.
-     * (or maybe we can check if is_partition == null and then don't strdup
-     * it.
-     * It returns null when a device is marked as swap or mounted via
-     * cryptdisk or even if it's not listed in /etc/fstab
-     */
-    
-    /* if device is partition we can tell where it's actually mounted*/
-    //DBusError error;
-    char *is_partition;
-    //const char *volume_udi = libhal_volume_get_udi(volume);
-    //dbus_error_init (&error);
 
-    is_partition =  libhal_volume_get_mount_point(volume); 
-    //libhal_device_get_property_string (ctx, volume_udi, "volume.mount_point", &error);
-
-    //if (dbus_error_is_set (&error)) {
-    //  fprintf (stderr, "error: %s: %s\n", error.name, error.message);
-    //  dbus_error_free (&error);
-		//}
-    
-    tmp = get_friendly_drive_name(assoc_drv);
+		/* if device is partition we can tell where it's actually mounted */
+		tmp = get_friendly_drive_name(assoc_drv);
 		if(partition_name) {
-			ret = g_strdup_printf(_("%s on %s mounted on %s"), partition_name, tmp, is_partition);
+			ret = g_strdup_printf(_("%s on %s"), partition_name, tmp);
 			g_free(partition_name);
 		}
 		else {
@@ -258,7 +238,7 @@ get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume)
 	return g_strdup(ret);
 }
 
-static gchar*
+gchar*
 get_friendly_volume_info(LibHalContext* ctx, LibHalVolume* volume)
 {
 	char* device_name;
@@ -313,6 +293,18 @@ build_volume_list(LibHalContext* ctx,
 		goto out;
 	}
 
+	/* if we use libhal_device_get-property() instead of 
+	 * libhal_volume_get_mount_mount_point() we have to setup DBusError and
+	 * some other things, the problem is do we like to have (null) in the gui
+	 * when libhal-storage cannot discover where a partition is mounted?
+	 * if so we can remove the DBusError code and use the libhal-storage func
+	 * to retrive the mount point.
+	 * (or maybe we can check if is_partition == null and then don't strdup
+	 * it.
+	 * It returns null when a device is marked as swap or mounted via
+	 * cryptdisk or even if it's not listed in /etc/fstab
+	 */
+
 	/* Now we use libhal-storage to get the info */
 	FormatVolume* current;
 	const char* icon_path;
@@ -334,6 +326,7 @@ build_volume_list(LibHalContext* ctx,
 
 			current->friendly_name = get_friendly_volume_info(ctx, current->volume);
 			current->drive_udi = g_strdup(libhal_volume_get_storage_device_udi(current->volume));
+			current->mountpoint = g_strdup(libhal_volume_get_mount_point(current->volume));
 			break;
 
 		case FORMATVOLUMETYPE_DRIVE:

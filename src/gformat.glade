@@ -67,7 +67,7 @@
 	      <child>
 		<widget class="GtkTable" id="table5">
 		  <property name="visible">True</property>
-		  <property name="n_rows">2</property>
+		  <property name="n_rows">3</property>
 		  <property name="n_columns">2</property>
 		  <property name="homogeneous">False</property>
 		  <property name="row_spacing">0</property>
@@ -117,8 +117,8 @@
 		    <packing>
 		      <property name="left_attach">1</property>
 		      <property name="right_attach">2</property>
-		      <property name="top_attach">1</property>
-		      <property name="bottom_attach">2</property>
+		      <property name="top_attach">2</property>
+		      <property name="bottom_attach">3</property>
 		      <property name="x_options">fill</property>
 		      <property name="y_options"></property>
 		    </packing>
@@ -129,6 +129,7 @@
 		      <property name="visible">True</property>
 		      <property name="add_tearoffs">False</property>
 		      <property name="focus_on_click">True</property>
+		      <signal name="changed" handler="on_volume_combo_changed" last_modification_time="Sun, 04 Feb 2007 20:18:05 GMT"/>
 		    </widget>
 		    <packing>
 		      <property name="left_attach">1</property>
@@ -136,6 +137,62 @@
 		      <property name="top_attach">0</property>
 		      <property name="bottom_attach">1</property>
 		      <property name="y_options">fill</property>
+		    </packing>
+		  </child>
+
+		  <child>
+		    <widget class="GtkHBox" id="extra_volume_hbox">
+		      <property name="visible">True</property>
+		      <property name="homogeneous">False</property>
+		      <property name="spacing">0</property>
+
+		      <child>
+			<widget class="GtkImage" id="image6">
+			  <property name="visible">True</property>
+			  <property name="stock">gtk-dialog-error</property>
+			  <property name="icon_size">4</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+			<packing>
+			  <property name="padding">0</property>
+			  <property name="expand">False</property>
+			  <property name="fill">False</property>
+			</packing>
+		      </child>
+
+		      <child>
+			<widget class="GtkLabel" id="extra_volume_info">
+			  <property name="label">&lt;i&gt;Extra info here!&lt;/i&gt;</property>
+			  <property name="use_underline">False</property>
+			  <property name="use_markup">True</property>
+			  <property name="justify">GTK_JUSTIFY_LEFT</property>
+			  <property name="wrap">False</property>
+			  <property name="selectable">False</property>
+			  <property name="xalign">0</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+			  <property name="width_chars">-1</property>
+			  <property name="single_line_mode">False</property>
+			  <property name="angle">0</property>
+			</widget>
+			<packing>
+			  <property name="padding">0</property>
+			  <property name="expand">False</property>
+			  <property name="fill">True</property>
+			</packing>
+		      </child>
+		    </widget>
+		    <packing>
+		      <property name="left_attach">1</property>
+		      <property name="right_attach">2</property>
+		      <property name="top_attach">1</property>
+		      <property name="bottom_attach">2</property>
+		      <property name="x_options">fill</property>
 		    </packing>
 		  </child>
 		</widget>
