@@ -42,7 +42,7 @@ PKG_CHECK_MODULES(GFORMAT,
 		  hal >= 0.5.8.1 
 		  libglade-2.0 >= $LIBGLADE_REQUIRED
 		  libgnomeui-2.0 >= 2.10,
-		  libgnomevfs-2.0)
+		  gnome-vfs-2.0.pc >= 2.16 )
 AC_SUBST(GFORMAT_CFLAGS)
 AC_SUBST(GFORMAT_LIBS)
 
