@@ -101,52 +101,90 @@ setup_volume_treeview (FormatDialog* dialog)
 static void
 rebuild_volume_combo(FormatDialog* dlg)
 {
+	/* FIXME: This code got far too out of hand and as a result is very
+	 * hacky. However, it works, so there's that */
+
 	g_assert(dlg && dlg->volume_model);
 
 	gboolean show_partitions = gtk_toggle_button_get_active(dlg->show_partitions);
-	GSList* volume_list = build_volume_list(dlg->hal_context, 
-			(show_partitions ? FORMATVOLUMETYPE_VOLUME : FORMATVOLUMETYPE_DRIVE),
+	GSList *drive_list = build_volume_list(dlg->hal_context, FORMATVOLUMETYPE_DRIVE,
 			dlg->icon_cache, 22, 22);
 
-	if(!volume_list) {
+	if(!drive_list) {
 		show_error_dialog(dlg->toplevel, 
 				_("Cannot get list of disks"), 
 				_("Make sure the HAL daemon is running and configured correctly"));
 		return;
 	}
 
-	/* Iterate through the volume list and build the tree model */
-	GSList* iter;	gboolean not_empty = FALSE, can_format;
+	/* Iterate through the volume list and build the tree model. If we're
+	 * listing partitions, it's a bit trickier: first we add all the drives,
+	 * and make a udi=>GtkTreeIter table. Then we use that table to add
+	 * the partitions to the correct drives */
+	GSList* treeiter_list = NULL, *device_list = drive_list;
+	GSList* iter;	gboolean not_empty = FALSE, can_format, listed_drives = FALSE;
+	GHashTable* udi_table = g_hash_table_new(g_str_hash, g_str_equal);
 	FormatVolume* current;
+	GtkTreeIter* parent_treeiter, *current_treeiter;
 
 	gtk_tree_store_clear(dlg->volume_model);
-	for(iter = volume_list; iter != NULL; iter=iter->next) {
-		current = iter->data;
-		can_format = (current->volume || 
-				!libhal_drive_uses_removable_media(current->drive) ||
-				libhal_drive_is_media_detected(current->drive));
+	while(device_list != NULL) {
+		for(iter = device_list; iter != NULL; iter=iter->next) {
+			current = iter->data;
+			can_format = (current->volume || 
+					!libhal_drive_uses_removable_media(current->drive) ||
+					libhal_drive_is_media_detected(current->drive));
 
-		if(!current->friendly_name || strlen(current->friendly_name) == 0)
-			continue;
+			if(!current->friendly_name || strlen(current->friendly_name) == 0)
+				continue;
 
-		/* FIXME: It'd be nice if the partitions were a subset of the
-		 * drive that owned them */
-		gtk_tree_store_insert_with_values(dlg->volume_model, NULL, NULL, 0,
-			COLUMN_NAME_MARKUP, current->friendly_name, 
-			COLUMN_ICON, current->icon, 
-			COLUMN_SENSITIVE, can_format, -1);
+			/* Look up the correct parent in the table */
+			parent_treeiter = NULL;
+			if(current->drive_udi)
+				parent_treeiter = g_hash_table_lookup(udi_table, current->drive_udi);
+			g_debug("Parent treeiter: 0x%p", parent_treeiter);
+			if(parent_treeiter && !gtk_tree_store_iter_is_valid(dlg->volume_model, parent_treeiter)) {
+				g_warning("Iter wasn't valid! 0x%p", parent_treeiter);
+				parent_treeiter = NULL;
+			}
 
-		not_empty = TRUE;
+			treeiter_list = g_slist_prepend(treeiter_list, (current_treeiter = g_new0(GtkTreeIter, 1)) );
+
+			gtk_tree_store_insert_with_values(dlg->volume_model, current_treeiter, parent_treeiter, 0,
+				COLUMN_NAME_MARKUP, current->friendly_name, 
+				COLUMN_ICON, current->icon, 
+				COLUMN_SENSITIVE, can_format, -1);
+
+			g_hash_table_insert(udi_table, current->udi, current_treeiter);
+
+			not_empty = TRUE;
+		}
+
+		if(!listed_drives && show_partitions) {
+			listed_drives = TRUE;
+			device_list = build_volume_list(dlg->hal_context, FORMATVOLUMETYPE_VOLUME,
+					dlg->icon_cache, 22, 22);
+		}
+		else {
+			format_volume_list_free(device_list);
+			if(device_list == drive_list)	drive_list = NULL;
+			device_list = NULL;
+		}
 	}
+
+	for(iter = treeiter_list; iter != NULL; iter = iter->next)
+		g_free((GtkTreeIter*)iter->data);
+	g_slist_free(treeiter_list);
+	g_hash_table_destroy(udi_table);
+
+	if(drive_list)
+		format_volume_list_free(drive_list);
 
 	if(!not_empty) {
 		gtk_tree_store_insert_with_values(dlg->volume_model, NULL, NULL, 0, 
 				COLUMN_NAME_MARKUP, _("<i>No devices found</i>"), 
 				COLUMN_SENSITIVE, FALSE, -1);
 	}
-
-	if(volume_list)
-		format_volume_list_free(volume_list);
 }
 
 /*

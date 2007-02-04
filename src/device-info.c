@@ -43,11 +43,18 @@ void
 format_volume_free(FormatVolume* fvol)
 {
 	g_assert(fvol != NULL);
-	libhal_volume_free(fvol->volume);
+	if(fvol->volume)
+		libhal_volume_free(fvol->volume);
+	if(fvol->drive)
+		libhal_drive_free(fvol->drive);
 	if(fvol->icon)
 		g_object_unref(fvol->icon);
 	if(fvol->friendly_name)
 		g_free(fvol->friendly_name);
+	if(fvol->udi)
+		g_free(fvol->udi);
+	if(fvol->drive_udi)
+		g_free(fvol->drive_udi);
 	g_free(fvol);
 }
 
@@ -246,7 +253,6 @@ get_friendly_volume_info(LibHalContext* ctx, LibHalVolume* volume)
 	else
 		ret = device_name;
 
-
 	return ret;
 }
 
@@ -287,6 +293,7 @@ build_volume_list(LibHalContext* ctx,
 		current = g_new0(FormatVolume, 1);
 
 		g_warning("udi: %s", device_udis[i]);
+		current->udi = g_strdup(device_udis[i]);
 		switch(type) {
 		case FORMATVOLUMETYPE_VOLUME:
 			current->volume = libhal_volume_from_udi(ctx, device_udis[i]);
@@ -298,9 +305,8 @@ build_volume_list(LibHalContext* ctx,
 			/* FIXME: This tastes like wrong */
 			current->icon = NULL;
 
-			/* FIXME: Fill in the actual friendly name */
 			current->friendly_name = get_friendly_volume_info(ctx, current->volume);
-			
+			current->drive_udi = g_strdup(libhal_volume_get_storage_device_udi(current->volume));
 			break;
 
 		case FORMATVOLUMETYPE_DRIVE:

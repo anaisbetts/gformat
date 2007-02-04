@@ -34,7 +34,12 @@ typedef struct FormatVolume FormatVolume;
  * it represents a drive which may or may not have a disk in it */
 struct FormatVolume {
 	LibHalVolume *volume;		
+	gchar* drive_udi;		/* The udi of the drive containing
+					   this volume; may be NULL */
+
 	LibHalDrive *drive;
+	gchar* udi;
+
 	GdkPixbuf* icon;
 	gchar* friendly_name;
 };
