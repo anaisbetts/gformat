@@ -199,9 +199,10 @@ get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume)
 
 	/* Try to describe the device */
 	const char* assoc_udi = libhal_volume_get_storage_device_udi(volume);
-	LibHalDrive* assoc_drv = NULL;
+
+  LibHalDrive* assoc_drv = NULL;
 	if(assoc_udi) 	assoc_drv = libhal_drive_from_udi(ctx, assoc_udi);
-	if(assoc_drv) {
+  if(assoc_drv) {
 		partition_num = (libhal_volume_is_partition(volume) ? 
 				(int)libhal_volume_get_partition_number(volume) :
 				-1);
@@ -213,10 +214,36 @@ get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume)
 			else
 				partition_name = g_strdup_printf(_("Partition %d"), partition_num);
 		}
+   
+    /* if we use libhal_device_get-property() instead of 
+     * libhal_volume_get_mount_mount_point() we have to setup DBusError and
+     * some other things, the problem is do we like to have (null) in the gui
+     * when libhal-storage cannot discover where a partition is mounted?
+     * if so we can remove the DBusError code and use the libhal-storage func
+     * to retrive the mount point.
+     * (or maybe we can check if is_partition == null and then don't strdup
+     * it.
+     * It returns null when a device is marked as swap or mounted via
+     * cryptdisk or even if it's not listed in /etc/fstab
+     */
+    
+    /* if device is partition we can tell where it's actually mounted*/
+    //DBusError error;
+    char *is_partition;
+    //const char *volume_udi = libhal_volume_get_udi(volume);
+    //dbus_error_init (&error);
 
-		tmp = get_friendly_drive_name(assoc_drv);
+    is_partition =  libhal_volume_get_mount_point(volume); 
+    //libhal_device_get_property_string (ctx, volume_udi, "volume.mount_point", &error);
+
+    //if (dbus_error_is_set (&error)) {
+    //  fprintf (stderr, "error: %s: %s\n", error.name, error.message);
+    //  dbus_error_free (&error);
+		//}
+    
+    tmp = get_friendly_drive_name(assoc_drv);
 		if(partition_name) {
-			ret = g_strdup_printf(_("%s on %s"), partition_name, tmp);
+			ret = g_strdup_printf(_("%s on %s mounted on %s"), partition_name, tmp, is_partition);
 			g_free(partition_name);
 		}
 		else {
