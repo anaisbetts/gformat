@@ -25,6 +25,13 @@
 #ifndef _DEVICE_INFO_H
 #define _DEVICE_INFO_H
 
+#include <glib.h>
+#include <glib/gi18n.h>
+#include <gdk/gdk.h>
+
+#include <libhal.h>
+#include <libhal-storage.h>
+
 typedef struct FormatVolume FormatVolume;
 
 /* Some explanation is in order: Since it's plausible that one would want to

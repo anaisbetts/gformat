@@ -40,14 +40,15 @@
 #include <libhal.h>
 #include <libhal-storage.h>
 
-#include "format-dialog.h"
 #include "device-info.h"
+#include "fs-parted.h"
+#include "format-dialog.h"
 
 enum {
-	COLUMN_UDI = 0,
-	COLUMN_ICON,
-	COLUMN_NAME_MARKUP,
-	COLUMN_SENSITIVE,
+	DEV_COLUMN_UDI = 0,
+	DEV_COLUMN_ICON,
+	DEV_COLUMN_NAME_MARKUP,
+	DEV_COLUMN_SENSITIVE,
 };
 
 
@@ -88,14 +89,39 @@ setup_volume_treeview (FormatDialog* dialog)
 	/* Set up the column */
 	gtk_cell_layout_pack_start( GTK_CELL_LAYOUT(combo), (icon_renderer = gtk_cell_renderer_pixbuf_new()), FALSE /* expand? */);
 	gtk_cell_layout_pack_start( GTK_CELL_LAYOUT(combo), (text_renderer = gtk_cell_renderer_text_new()), TRUE );
-	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), icon_renderer, "pixbuf", COLUMN_ICON );
-	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), icon_renderer, "sensitive", COLUMN_SENSITIVE );
-	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), text_renderer, "markup", COLUMN_NAME_MARKUP );
-	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), text_renderer, "sensitive", COLUMN_SENSITIVE );
+	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), icon_renderer, "pixbuf", DEV_COLUMN_ICON );
+	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), icon_renderer, "sensitive", DEV_COLUMN_SENSITIVE );
+	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), text_renderer, "markup", DEV_COLUMN_NAME_MARKUP );
+	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), text_renderer, "sensitive", DEV_COLUMN_SENSITIVE );
 
 	/* Do some miscellaneous things */
 	dialog->icon_cache = create_icon_cache();
 	dialog->volume_model = model;
+}
+
+static void
+fs_menu_cb(gpointer key, gpointer value, gpointer userdata)
+{
+	GtkMenuShell* fs_menu = GTK_MENU_SHELL(userdata);
+	GtkMenuItem* current = gtk_menu_item_new_with_label((const gchar*)key);
+	gtk_menu_shell_append(fs_menu, current);
+}
+
+static void
+setup_filesystem_menu(FormatDialog* dialog)
+{
+	GHashTable* fs_list;
+
+	fs_list = get_fs_list();
+	g_assert(fs_list);
+	
+	/* Track down the menu we want to add subitems to */
+	GtkMenuItem* fs_menu_item =  GTK_MENU_ITEM(glade_xml_get_widget(dialog->xml, "menu_fs_list"));
+	GtkMenu* fs_menu = GTK_MENU(gtk_menu_new());
+
+	g_hash_table_foreach(fs_list, fs_menu_cb, fs_menu);
+	g_hash_table_destroy(fs_list);
+	gtk_menu_item_set_submenu(fs_menu_item, fs_menu);
 }
 
 static void
@@ -151,10 +177,10 @@ rebuild_volume_combo(FormatDialog* dialog)
 			treeiter_list = g_slist_prepend(treeiter_list, (current_treeiter = g_new0(GtkTreeIter, 1)) );
 
 			gtk_tree_store_insert_with_values(dialog->volume_model, current_treeiter, parent_treeiter, 0,
-				COLUMN_UDI, current->udi, 
-				COLUMN_NAME_MARKUP, current->friendly_name, 
-				COLUMN_ICON, current->icon, 
-				COLUMN_SENSITIVE, can_format, -1);
+				DEV_COLUMN_UDI, current->udi, 
+				DEV_COLUMN_NAME_MARKUP, current->friendly_name, 
+				DEV_COLUMN_ICON, current->icon, 
+				DEV_COLUMN_SENSITIVE, can_format, -1);
 
 			g_hash_table_insert(udi_table, current->udi, current_treeiter);
 
@@ -183,8 +209,8 @@ rebuild_volume_combo(FormatDialog* dialog)
 
 	if(!not_empty) {
 		gtk_tree_store_insert_with_values(dialog->volume_model, NULL, NULL, 0, 
-				COLUMN_NAME_MARKUP, _("<i>No devices found</i>"), 
-				COLUMN_SENSITIVE, FALSE, -1);
+				DEV_COLUMN_NAME_MARKUP, _("<i>No devices found</i>"), 
+				DEV_COLUMN_SENSITIVE, FALSE, -1);
 	}
 }
 
@@ -193,7 +219,7 @@ get_udi_from_iter(FormatDialog* dialog, GtkTreeIter* iter)
 {
 	char* ret;
 	GValue val = {0, };
-	gtk_tree_model_get_value(GTK_TREE_MODEL(dialog->volume_model), iter, COLUMN_UDI, &val);
+	gtk_tree_model_get_value(GTK_TREE_MODEL(dialog->volume_model), iter, DEV_COLUMN_UDI, &val);
 	ret = g_strdup(g_value_get_string(&val));
 	g_value_unset(&val);
 	return ret;
@@ -235,9 +261,11 @@ update_extra_info(FormatDialog* dialog)
 		}
 		char* vol_name = get_friendly_volume_name(dialog->hal_context, vol);
 
-		g_snprintf(buf, 512, _("<i>%s is currently mounted on %s</i>"), vol_name, mountpoint);
+		/* FIXME: The \n is a hack to get the dialog box to not resize 
+		 * horizontally so much */
+		g_snprintf(buf, 512, _("<i>%s\n is currently mounted on '%s'</i>"), vol_name, mountpoint);
 		g_free(vol_name);
-		gtk_label_set_markup(dialog->extra_volume_info, buf);
+		gtk_label_set_markup(info, buf);
 		show_info |= TRUE;
 	} while(0);
 
@@ -253,6 +281,7 @@ update_dialog(FormatDialog* dialog)
 	rebuild_volume_combo(dialog);
 	update_extra_info(dialog);
 }
+
 
 /*
  * Event handlers
@@ -339,7 +368,10 @@ format_dialog_new(void)
 
 	glade_xml_signal_autoconnect(dialog->xml);
 	g_object_set_data(G_OBJECT(dialog->toplevel), "userdata", dialog);
+
+	/* Set stuff in the dialog up */
 	setup_volume_treeview(dialog);	
+	setup_filesystem_menu(dialog);
 
 	gtk_widget_show_all (dialog->toplevel);
 	update_dialog(dialog);

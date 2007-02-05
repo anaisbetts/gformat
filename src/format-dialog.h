@@ -36,7 +36,6 @@ typedef struct _FormatDialog {
 	GHashTable* icon_cache;
 	GtkLabel* extra_volume_info;
 	GtkHBox* extra_volume_hbox;
-
 } FormatDialog;
 
 FormatDialog* format_dialog_new(void);

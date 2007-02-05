@@ -16,6 +16,7 @@ glade_DATA = gformat.glade
 
 gnome_format_SOURCES = \
 	device-info.c \
+	fs-parted.c \
 	format-dialog.c \
 	logger.c \
 	main.c \
@@ -23,7 +24,7 @@ gnome_format_SOURCES = \
 
 gnome_format_LDADD = $(GFORMAT_LIBS) 
 
-gnome_format_LDFLAGS = -export-dynamic
+gnome_format_LDFLAGS = -export-dynamic -lparted
 
 man_MANS = gnome-format.1
 

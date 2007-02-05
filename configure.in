@@ -35,6 +35,9 @@ ALL_LINGUAS="fr"
 AM_GLIB_GNU_GETTEXT
 GLIB_DEFINE_LOCALEDIR(LOCALEDIR)
 
+dnl Ghetto check for libparted
+dnl FIXME: Actually do this
+
 PKG_CHECK_MODULES(GFORMAT, 
 		  glib-2.0 >= $GLIB_REQUIRED 
 		  gtk+-2.0 >= $GTK_REQUIRED 
