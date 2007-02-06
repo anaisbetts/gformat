@@ -35,8 +35,8 @@ ALL_LINGUAS="fr"
 AM_GLIB_GNU_GETTEXT
 GLIB_DEFINE_LOCALEDIR(LOCALEDIR)
 
-dnl Ghetto check for libparted
-dnl FIXME: Actually do this
+AC_CHECK_LIB(parted, ped_get_version, [], AC_MSG_ERROR([*** parted library (libparted) not found]))
+AC_CHECK_DECL(PED_DEVICE_UBD, [], AC_MSG_ERROR([*** Requires libparted >= 1.6.25]), [#include <parted/parted.h>])
 
 PKG_CHECK_MODULES(GFORMAT, 
 		  glib-2.0 >= $GLIB_REQUIRED 
