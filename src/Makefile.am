@@ -22,6 +22,15 @@ gnome_format_SOURCES = \
 	main.c \
 	partutil.c
 
+THEHEADERS = 
+
+noinst_HEADERS = \
+	format-dialog.h 	\
+	fs-parted.h 		\
+	partutil.h 		\
+	device-info.h 		\
+	logger.h
+
 gnome_format_LDADD = $(GFORMAT_LIBS) 
 
 gnome_format_LDFLAGS = -export-dynamic -lparted
@@ -29,5 +38,5 @@ gnome_format_LDFLAGS = -export-dynamic -lparted
 man_MANS = gnome-format.1
 
 EXTRA_DIST = 		     \
-	gformat2.glade		\
-	gformat.1
+	gformat.glade		\
+	gnome-format.1

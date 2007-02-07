@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = src 
+SUBDIRS = po src 
 
 
 desktop_in_files = gnome-format.desktop.in
@@ -21,7 +21,8 @@ INTLTOOL =                      \
         intltool-update.in
     
 EXTRA_DIST = \
-	$(desktop_in_files) 
+	$(desktop_in_files)  	\
+	$(INTLTOOL)
 	
 	#$(schemas_in_file) 
 	#$(schemas_DATA)
