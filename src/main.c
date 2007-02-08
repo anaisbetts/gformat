@@ -67,7 +67,11 @@ main (int argc, char *argv[])
 		gtk_main ();
 		format_dialog_free(dialog);
 	}
-
-	return 0;
+  
+  PedDevice = dev;
+  dev = ped_device_get("/dev/sda1")
+  g_free(dev);
+	
+  return 0;
 
 };

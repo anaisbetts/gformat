@@ -26,5 +26,6 @@
 #define _FS_PARTED_H
 
 GHashTable* get_fs_list(void);
+PedDevice* get_ped(char *path);
 
 #endif

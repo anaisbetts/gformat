@@ -50,3 +50,25 @@ get_fs_list(void)
 
 	return ret;
 }
+
+PedDevice* 
+get__ped(char *path)
+{
+  // this shouldn't be done here
+  PedDevice *dev = g_new0(PedDevice, 1);
+  
+  dev = ped_device_get(path);
+  
+  if ( ped_device_open(dev) == 0)
+    g_error("device %s with path %s can't be initialized ", dev->model, dev->path );
+  
+  g_message("device %s with path %s can be initialized ", dev->model, dev->path );
+
+  if ( ped_device_close(dev) == 0)
+    g_error("device %s with path %s can't be freed", dev->model, dev->path );
+
+  return dev;
+}    
+    
+
+
