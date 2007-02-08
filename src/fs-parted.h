@@ -25,6 +25,7 @@
 #ifndef _FS_PARTED_H
 #define _FS_PARTED_H
 
+#include "parted/constraint.h"
 #include "parted/device.h"
 
 GHashTable* get_fs_list(void);

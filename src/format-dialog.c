@@ -41,8 +41,10 @@
 #include <libhal-storage.h>
 
 #include "device-info.h"
-#include "fs-parted.h"
 #include "format-dialog.h"
+
+
+#include "fs-parted.h"
 
 enum {
 	DEV_COLUMN_UDI = 0,
