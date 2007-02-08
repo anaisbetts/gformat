@@ -38,6 +38,8 @@ GLIB_DEFINE_LOCALEDIR(LOCALEDIR)
 AC_CHECK_LIB(parted, ped_get_version, [], AC_MSG_ERROR([*** parted library (libparted) not found]))
 AC_CHECK_DECL(PED_DEVICE_UBD, [], AC_MSG_ERROR([*** Requires libparted >= 1.6.25]), [#include <parted/parted.h>])
 
+AC_CHECK_LIB(uuid, uuid_generate, [], AC_MSG_ERROR([*** uuid library (libuuid) not found]))
+
 PKG_CHECK_MODULES(GFORMAT, 
 		  glib-2.0 >= $GLIB_REQUIRED 
 		  gtk+-2.0 >= $GTK_REQUIRED 
