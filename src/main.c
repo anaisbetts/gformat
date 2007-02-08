@@ -68,7 +68,7 @@ main (int argc, char *argv[])
 		format_dialog_free(dialog);
 	}
   
-  PedDevice = dev;
+  PedDevice *dev;
   dev = ped_device_get("/dev/sda1")
   g_free(dev);
 	
