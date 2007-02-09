@@ -51,52 +51,19 @@ get_fs_list(void)
 	return ret;
 }
 
-PedDevice* 
-get_ped(char *path)
-{
-        PedDevice *dev = ped_device_get(path);
-        
-        printf("device %s with path %s can be initialized \n", dev->model, dev->path );
-       
-        return dev;
-       
-}    
-    
-
-PedDisk *
-get_partition_table(PedDevice *dev)
-{
-      
-      PedDisk *disk = ped_disk_new(dev);
-      
-      return disk;
-
-}
-
-/*
-PedGeometry *
-get_ped_geometry(PedDevice *dev){
-        
-        PedSector  value = 0; 
-
-        PedGeometry *geom = ped_geometry_new( dev, &value, 1);
-
-        return geom;
-}
-*/
-
-void 
-list_partitions(PedDisk *disk)
-{
-        ped_disk_print(disk);
-}
-
 void
 do_operations(char *path)
 {
-        PedDevice *dev = get_ped(path);
-        PedDisk  *disk = get_partition_table(dev);
+        PedDevice *dev = ped_device_get(path);
+        printf("device %s with path %s can be initialized \n", dev->model, dev->path );
+       
+      
+        PedDisk *disk = ped_disk_new(dev);
+      
+        PedSector  value = 0; 
+        PedGeometry *geom = ped_geometry_new( dev, &value, 1);
 
-        list_partitions(disk);
-        
+
+        ped_disk_print(disk);
+      
 }
