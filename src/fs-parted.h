@@ -29,6 +29,6 @@
 #include "parted/device.h"
 
 GHashTable* get_fs_list(void);
-PedDevice* get_ped(char *path);
+void do_operations(char *path);
 
 #endif

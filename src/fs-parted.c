@@ -52,23 +52,51 @@ get_fs_list(void)
 }
 
 PedDevice* 
-get__ped(char *path)
+get_ped(char *path)
 {
-  // this shouldn't be done here
-  PedDevice *dev = g_new0(PedDevice, 1);
-  
-  dev = ped_device_get(path);
-  
-  if ( ped_device_open(dev) == 0)
-    g_error("device %s with path %s can't be initialized ", dev->model, dev->path );
-  
-  g_message("device %s with path %s can be initialized ", dev->model, dev->path );
-
-  if ( ped_device_close(dev) == 0)
-    g_error("device %s with path %s can't be freed", dev->model, dev->path );
-
-  return dev;
+        PedDevice *dev = ped_device_get(path);
+        
+        printf("device %s with path %s can be initialized \n", dev->model, dev->path );
+       
+        return dev;
+       
 }    
     
 
+PedDisk *
+get_partition_table(PedDevice *dev)
+{
+      
+      PedDisk *disk = ped_disk_new(dev);
+      
+      return disk;
 
+}
+
+/*
+PedGeometry *
+get_ped_geometry(PedDevice *dev){
+        
+        PedSector  value = 0; 
+
+        PedGeometry *geom = ped_geometry_new( dev, &value, 1);
+
+        return geom;
+}
+*/
+
+void 
+list_partitions(PedDisk *disk)
+{
+        ped_disk_print(disk);
+}
+
+void
+do_operations(char *path)
+{
+        PedDevice *dev = get_ped(path);
+        PedDisk  *disk = get_partition_table(dev);
+
+        list_partitions(disk);
+        
+}

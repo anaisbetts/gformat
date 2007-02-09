@@ -35,6 +35,7 @@
 #include <gtk/gtk.h>
 
 #include "format-dialog.h"
+#include "fs-parted.h"
 
 /* Command-line stuff */
 static GOptionEntry entries[] = 
@@ -68,10 +69,7 @@ main (int argc, char *argv[])
 		format_dialog_free(dialog);
 	}
   
-  PedDevice *dev;
-  dev = ped_device_get("/dev/sda1")
-  g_free(dev);
-	
+  do_operations("/dev/sdb");
   return 0;
 
 };
