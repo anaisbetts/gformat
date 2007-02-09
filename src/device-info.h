@@ -60,6 +60,7 @@ enum FormatVolumeType {
 void format_volume_free(FormatVolume* volume);
 void format_volume_list_free(GSList* volume_list);
 
+guint64 get_format_volume_size(const FormatVolume* vol);
 char* get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume);
 gchar* get_friendly_drive_info(LibHalDrive* drive);
 char* get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume);

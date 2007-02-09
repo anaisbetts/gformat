@@ -27,6 +27,9 @@
 /* Define to 1 if you have the `parted' library (-lparted). */
 #undef HAVE_LIBPARTED
 
+/* Define to 1 if you have the `uuid' library (-luuid). */
+#undef HAVE_LIBUUID
+
 /* Define to 1 if you have the <locale.h> header file. */
 #undef HAVE_LOCALE_H
 

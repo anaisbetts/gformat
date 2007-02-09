@@ -62,6 +62,9 @@ main (int argc, char *argv[])
 
 	gtk_init(&argc, &argv);
 
+	/* Test stuff */
+	//do_operations("/dev/sda");
+
 	FormatDialog *dialog;
 	dialog = format_dialog_new();
 	if(dialog != NULL) {
@@ -69,7 +72,6 @@ main (int argc, char *argv[])
 		format_dialog_free(dialog);
 	}
   
-  do_operations("/dev/sdb");
-  return 0;
 
+	return 0;
 };

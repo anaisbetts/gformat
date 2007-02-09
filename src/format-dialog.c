@@ -42,8 +42,6 @@
 
 #include "device-info.h"
 #include "format-dialog.h"
-
-
 #include "fs-parted.h"
 
 enum {
@@ -52,6 +50,8 @@ enum {
 	DEV_COLUMN_NAME_MARKUP,
 	DEV_COLUMN_SENSITIVE,
 };
+
+#define LUKS_BLKDEV_MIN_SIZE 	(1048576 << 4) 	/* At least 16M */
 
 
 /*
@@ -74,6 +74,91 @@ show_error_dialog (GtkWidget *parent, gchar *main, gchar *secondary)
 	gtk_window_set_title (GTK_WINDOW (dialog), "");
 	gtk_dialog_run (GTK_DIALOG (dialog));
 	gtk_widget_destroy (dialog);
+}
+
+static const gchar*
+get_fs_from_menuitem_name(const gchar* menuitem_name)
+{
+	const gchar* ret;
+	for(ret = menuitem_name + (strlen(menuitem_name) - 1); ret > menuitem_name; ret--)
+	{
+		if(*ret == '_')
+			return ret+1;
+	}
+	return ret;
+}
+
+gchar*
+get_udi_from_iter(FormatDialog* dialog, GtkTreeIter* iter)
+{
+	char* ret;
+	GValue val = {0, };
+	gtk_tree_model_get_value(GTK_TREE_MODEL(dialog->volume_model), iter, DEV_COLUMN_UDI, &val);
+	if(val.g_type == 0)
+		return NULL;
+
+	ret = g_strdup(g_value_get_string(&val));
+	g_value_unset(&val);
+	return ret;
+}
+
+static gboolean
+luks_valid_for_device (const FormatVolume* dev)
+{
+	/* AFAIK, you can format LUKS on anything that is above a certain size */
+	g_assert(dev != NULL);
+	return (get_format_volume_size(dev) >= LUKS_BLKDEV_MIN_SIZE);
+}
+
+static gboolean
+floppy_valid_for_device (const FormatVolume* dev)
+{
+	g_assert(dev != NULL);
+	if(dev->drive)
+		return (libhal_drive_get_type(dev->drive) == LIBHAL_DRIVE_TYPE_FLOPPY);
+
+	return FALSE;
+}
+
+static const FormatVolume* 
+get_cached_device_from_udi(FormatDialog* dialog, const char* udi)
+{
+	gboolean is_drive_list = TRUE;
+	GSList* iter = dialog->hal_drive_list;
+
+	while(iter) {
+		FormatVolume* current = iter->data;
+
+		if(current == NULL) {
+			g_error("current volume is null?");
+			continue;
+		}
+
+		if(!strcmp(current->udi, udi))
+			return current;
+
+		iter = g_slist_next(iter);
+		if(!iter && is_drive_list) {
+			iter = dialog->hal_volume_list;
+			is_drive_list = FALSE;
+		}
+	}
+
+	return NULL;
+}
+
+const FormatVolume*
+get_cached_device_from_treeiter(FormatDialog* dialog, GtkTreeIter* iter)
+{
+	gchar* udi = get_udi_from_iter(dialog, iter);
+	if(!udi) {
+		g_warning("UDI for iter was null!");
+		return NULL;
+	}
+
+	const FormatVolume* ret = get_cached_device_from_udi(dialog, udi);
+
+	g_free(udi);	return ret;
 }
 
 static void 
@@ -126,30 +211,55 @@ setup_filesystem_menu(FormatDialog* dialog)
 	gtk_menu_item_set_submenu(fs_menu_item, fs_menu);
 }
 
-static void
-rebuild_volume_combo(FormatDialog* dialog)
+static gboolean 
+update_device_lists(FormatDialog* dialog)
 {
-	/* FIXME: This code got far too out of hand and as a result is very
-	 * hacky. However, it works, so there's that */
+	if(dialog->hal_drive_list) {
+		format_volume_list_free(dialog->hal_drive_list);
+		dialog->hal_drive_list = NULL;
+	}
 
-	g_assert(dialog && dialog->volume_model);
-
-	gboolean show_partitions = gtk_toggle_button_get_active(dialog->show_partitions);
-	GSList *drive_list = build_volume_list(dialog->hal_context, FORMATVOLUMETYPE_DRIVE,
+	dialog->hal_drive_list = build_volume_list(dialog->hal_context, FORMATVOLUMETYPE_DRIVE,
 			dialog->icon_cache, 22, 22);
 
-	if(!drive_list) {
+	if(!dialog->hal_drive_list) {
 		show_error_dialog(dialog->toplevel, 
 				_("Cannot get list of disks"), 
 				_("Make sure the HAL daemon is running and configured correctly"));
-		return;
+		return FALSE;
 	}
+
+	if(dialog->hal_volume_list) {
+		format_volume_list_free(dialog->hal_volume_list);
+		dialog->hal_volume_list = NULL;
+	}
+
+	dialog->hal_volume_list = build_volume_list(dialog->hal_context, FORMATVOLUMETYPE_VOLUME,
+			dialog->icon_cache, 22, 22);
+
+	if(!dialog->hal_volume_list) {
+		show_error_dialog(dialog->toplevel, 
+				_("Cannot get list of partitions"), 
+				_("Make sure the HAL daemon is running and configured correctly"));
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static void
+rebuild_volume_combo(FormatDialog* dialog)
+{
+	g_assert(dialog && dialog->volume_model);
+	gboolean show_partitions = gtk_toggle_button_get_active(dialog->show_partitions);
+	if( !update_device_lists(dialog) )
+		return;
 
 	/* Iterate through the volume list and build the tree model. If we're
 	 * listing partitions, it's a bit trickier: first we add all the drives,
 	 * and make a udi=>GtkTreeIter table. Then we use that table to add
 	 * the partitions to the correct drives */
-	GSList* treeiter_list = NULL, *device_list = drive_list;
+	GSList* treeiter_list = NULL, *device_list = dialog->hal_drive_list;
 	GSList* iter;	gboolean not_empty = FALSE, can_format, listed_drives = FALSE;
 	GHashTable* udi_table = g_hash_table_new(g_str_hash, g_str_equal);
 	FormatVolume* current;
@@ -170,11 +280,12 @@ rebuild_volume_combo(FormatDialog* dialog)
 			parent_treeiter = NULL;
 			if(current->drive_udi)
 				parent_treeiter = g_hash_table_lookup(udi_table, current->drive_udi);
-			g_debug("Parent treeiter: 0x%p", parent_treeiter);
+			
+			/*
 			if(parent_treeiter && !gtk_tree_store_iter_is_valid(dialog->volume_model, parent_treeiter)) {
 				g_warning("Iter wasn't valid! 0x%p", parent_treeiter);
 				parent_treeiter = NULL;
-			}
+			} */
 
 			treeiter_list = g_slist_prepend(treeiter_list, (current_treeiter = g_new0(GtkTreeIter, 1)) );
 
@@ -189,15 +300,10 @@ rebuild_volume_combo(FormatDialog* dialog)
 			not_empty = TRUE;
 		}
 
+		device_list = NULL;
 		if(!listed_drives && show_partitions) {
 			listed_drives = TRUE;
-			device_list = build_volume_list(dialog->hal_context, FORMATVOLUMETYPE_VOLUME,
-					dialog->icon_cache, 22, 22);
-		}
-		else {
-			format_volume_list_free(device_list);
-			if(device_list == drive_list)	drive_list = NULL;
-			device_list = NULL;
+			device_list = dialog->hal_volume_list;
 		}
 	}
 
@@ -206,9 +312,6 @@ rebuild_volume_combo(FormatDialog* dialog)
 	g_slist_free(treeiter_list);
 	g_hash_table_destroy(udi_table);
 
-	if(drive_list)
-		format_volume_list_free(drive_list);
-
 	if(!not_empty) {
 		gtk_tree_store_insert_with_values(dialog->volume_model, NULL, NULL, 0, 
 				DEV_COLUMN_NAME_MARKUP, _("<i>No devices found</i>"), 
@@ -216,18 +319,7 @@ rebuild_volume_combo(FormatDialog* dialog)
 	}
 }
 
-gchar*
-get_udi_from_iter(FormatDialog* dialog, GtkTreeIter* iter)
-{
-	char* ret;
-	GValue val = {0, };
-	gtk_tree_model_get_value(GTK_TREE_MODEL(dialog->volume_model), iter, DEV_COLUMN_UDI, &val);
-	ret = g_strdup(g_value_get_string(&val));
-	g_value_unset(&val);
-	return ret;
-}
-
-static void
+void
 update_extra_info(FormatDialog* dialog)
 {
 	gboolean show_info = FALSE;
@@ -244,24 +336,12 @@ update_extra_info(FormatDialog* dialog)
 		if(!gtk_combo_box_get_active_iter(dialog->volume_combo, &iter))
 			break;
 
-		char* udi = get_udi_from_iter(dialog, &iter);
-		if(!udi) {
-			g_error("UDI of device was blank!");
+		const FormatVolume* vol = get_cached_device_from_treeiter(dialog, &iter);
+		if(!vol || !vol->volume)
 			break;
-		}
-		LibHalVolume* vol = libhal_volume_from_udi(dialog->hal_context, udi);
-		if(!vol) {
-			g_free(udi);
-			break;
-		}
 
-		const char* mountpoint = libhal_volume_get_mount_point(vol);
-		if(!mountpoint) {
-			g_free(udi);
-			libhal_volume_free(vol);
-			break;
-		}
-		char* vol_name = get_friendly_volume_name(dialog->hal_context, vol);
+		const char* mountpoint = libhal_volume_get_mount_point(vol->volume);
+		char* vol_name = get_friendly_volume_name(dialog->hal_context, vol->volume);
 
 		/* FIXME: The \n is a hack to get the dialog box to not resize 
 		 * horizontally so much */
@@ -277,11 +357,40 @@ update_extra_info(FormatDialog* dialog)
 		gtk_widget_hide_all(GTK_WIDGET(dialog->extra_volume_hbox));
 }
 
+static void update_options_visibility(FormatDialog* dialog)
+{
+	GtkTreeIter iter = {0, NULL};
+	gboolean valid_iter;
+
+	valid_iter = gtk_combo_box_get_active_iter(dialog->volume_combo, &iter);
+	const FormatVolume* dev;
+
+	if(valid_iter)
+		dev = get_cached_device_from_treeiter(dialog, &iter);
+
+	if(!dev) {
+		g_debug("Device is null!");
+	}
+
+	if(valid_iter && luks_valid_for_device(dev)) {
+		gtk_widget_show_all(GTK_WIDGET(dialog->luks_subwindow));
+	} else {
+		gtk_widget_hide_all(GTK_WIDGET(dialog->luks_subwindow));
+	}
+
+	if(valid_iter && floppy_valid_for_device(dev)) {
+		gtk_widget_show_all(GTK_WIDGET(dialog->floppy_subwindow));
+	} else {
+		gtk_widget_hide_all(GTK_WIDGET(dialog->floppy_subwindow));
+	}
+}
+
 static void
 update_dialog(FormatDialog* dialog)
 {
 	rebuild_volume_combo(dialog);
 	update_extra_info(dialog);
+	update_options_visibility(dialog);
 }
 
 
@@ -307,6 +416,7 @@ on_volume_combo_changed(GtkWidget* w, gpointer user_data)
 {
 	FormatDialog* dialog = g_object_get_data( G_OBJECT(gtk_widget_get_toplevel(w)), "userdata" );
 	update_extra_info(dialog);
+	update_options_visibility(dialog);
 }
 
 void
@@ -338,12 +448,14 @@ format_dialog_new(void)
 {
 	FormatDialog *dialog;
 	dialog = g_new0 (FormatDialog, 1);
+	const char* xmlpath = GLADEDIR "/gformat.glade";
 
-	dialog->xml = glade_xml_new (GLADEDIR "/gformat.glade", NULL, NULL);
+	dialog->xml = glade_xml_new (xmlpath, "toplevel", NULL);
 	
 	/* Try uninstalled next */
 	if (!dialog->xml) {
-		dialog->xml = glade_xml_new ("./gformat.glade", NULL, NULL);
+		xmlpath = "./gformat.glade";
+		dialog->xml = glade_xml_new (xmlpath, "toplevel", NULL);
 	}
 
 	if (dialog->xml == NULL){
@@ -364,6 +476,9 @@ format_dialog_new(void)
 	dialog->extra_volume_info = GTK_LABEL(glade_xml_get_widget(dialog->xml, "extra_volume_info"));
 	dialog->extra_volume_hbox = GTK_HBOX(glade_xml_get_widget(dialog->xml, "extra_volume_hbox"));
 	g_assert(dialog->toplevel != NULL);
+
+	dialog->luks_subwindow = GTK_BOX(glade_xml_get_widget (dialog->xml, "luks_subwindow"));
+	dialog->floppy_subwindow = GTK_BOX(glade_xml_get_widget (dialog->xml, "floppy_subwindow"));
 
 	/* Get a HAL context; if we can't, bail */
 	dialog->hal_context = libhal_context_alloc();
@@ -398,6 +513,18 @@ void format_dialog_free(FormatDialog* obj)
 	/* We have destroy notify hooks, so we don't worry about what's inside */
 	if(obj->icon_cache)
 		g_hash_table_destroy(obj->icon_cache);
+
+	if(obj->hal_drive_list)
+		format_volume_list_free(obj->hal_drive_list);
+
+	if(obj->hal_volume_list)
+		format_volume_list_free(obj->hal_volume_list);
+
+	/* Free our windows */
+	g_object_unref(obj->luks_subwindow);
+	g_object_unref(obj->floppy_subwindow);
+	g_object_unref(obj->toplevel);
+	g_object_unref(obj->xml);
 
 	g_free(obj);
 }

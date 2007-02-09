@@ -143,6 +143,23 @@ GHashTable* create_icon_cache(void)
 	return g_hash_table_new_full(g_str_hash, g_str_equal, mem_free_cb, unref_free_cb);
 }
 
+guint64 
+get_format_volume_size(const FormatVolume* vol)
+{
+	g_assert(vol != NULL);
+
+	if(vol->volume)
+		return libhal_volume_get_size(vol->volume);
+
+	if(vol->drive && libhal_drive_is_media_detected(vol->drive))
+		return libhal_drive_get_media_size(vol->drive);
+
+	if(vol->drive)
+		return libhal_drive_get_size(vol->drive);
+
+	return 0;
+}
+
 char*
 get_friendly_drive_name(LibHalDrive* drive)
 {
