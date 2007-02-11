@@ -25,26 +25,36 @@
 #ifndef _FORMATTERBASE_H
 #define _FORMATTERBASE_H
 
-typedef gboolean (*FormatterCanFormat) 	(const char* blockdev, const char* fs);
-typedef gboolean (*FormatterDoFormat) 	(const char* blockdev, const char* fs);
-typedef gboolean (*FormatterUnref) 	(void);
+/* Forward Declaration */
+typedef struct _Formatter Formatter;
 
-typedef struct FormatterOps 
+typedef gboolean (*FormatterCanFormat) 	(Formatter* this, const char* blockdev, const char* fs);
+
+typedef gboolean (*FormatterDoFormat) 	(Formatter* this, 
+					 const char* blockdev, 
+					 const char* fs, 
+					 GHashTable* options,
+					 GError** error);
+
+typedef void 	 (*FormatterUnref) 	(Formatter* this);
+
+typedef struct _FormatterOps 
 {
 	FormatterCanFormat can_format;
 	FormatterDoFormat do_format;
 	FormatterUnref unref;
-};
+} FormatterOps;
 
-typedef struct Formatter
+struct _Formatter
 {
-	const char** available_fs_list; 	/* Null-terminated array of char ptrs */
+	const char** available_fs_list; 	/* Null-terminated array of const char ptrs */
 	FormatterOps fops;
-}
+	gpointer user_data;
+};
 
 
 gboolean formatter_can_format(GSList* formatter_list, const char* fs, const char* blockdev);
-gboolean formatter_do_format(GSList* formatter_list, const char* fs, GHashTable* options, GError** error);
+gboolean formatter_do_format(GSList* formatter_list, const char* blockdev, const char* fs, GHashTable* options, GError** error);
 void formatter_list_free(GSList* formatter_list);
 
 #endif

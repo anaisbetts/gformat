@@ -31,7 +31,60 @@
 #include <parted/parted.h>
 
 #include "device-info.h"
+#include "formatterbase.h"
 #include "fs-parted.h"
+
+#if 0
+/* TODO: We should do a more thorough check to see if we really can
+ * format this device using this filesystem
+ */
+static gboolean 
+parted_formatter_canformat(Formatter* this, const char* blockdev, const char* fs)
+{
+}
+#endif
+
+static gboolean 
+parted_formatter_doformat(Formatter* this, const char* blockdev, const char* fs, GHashTable* options, GError** error)
+{
+}
+
+static void 
+parted_formatter_unref(Formatter* this)
+{
+	g_free(this->available_fs_list);
+}
+
+Formatter*
+parted_formatter_init(void)
+{
+	/* FIXME: There's got to be a less sloppy way to do this */
+	const char* fs_list[128];
+	int fs_list_count = 0;
+	Formatter* ret = g_new0(Formatter, 1);
+	const FormatterOps fops = { NULL /*parted_formatter_canformat*/, parted_formatter_doformat, parted_formatter_unref};
+
+	PedFileSystemType* iter = ped_file_system_type_get_next(NULL);
+
+	while(iter != NULL) {
+		/* FIXME: It probably isn't kosher to go poking around in
+		 * this structure, but there's no better way to do it */
+		if(iter->ops->create) {
+			fs_list[fs_list_count] = iter->name;
+			fs_list_count++;
+		}
+		iter = ped_file_system_type_get_next(iter);
+	}
+
+	if(fs_list_count == 0)
+		return NULL;
+
+	ret->available_fs_list = (const char**)g_new0(char*, fs_list_count + 1);
+	memcpy(ret->available_fs_list, fs_list, sizeof(char*) * fs_list_count);
+	ret->fops = fops;
+
+	return ret;
+}
 
 GHashTable* 
 get_fs_list(void)
