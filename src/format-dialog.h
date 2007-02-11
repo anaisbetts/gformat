@@ -44,6 +44,10 @@ typedef struct _FormatDialog {
 	LibHalContext* hal_context;
 	GSList* hal_drive_list;		/* List of FormatVolume ptrs */
 	GSList* hal_volume_list; 	/* this too */
+
+	/* Formatting backends list */
+	GSList* formatter_list;
+
 } FormatDialog;
 
 FormatDialog* format_dialog_new(void);

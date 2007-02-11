@@ -42,6 +42,7 @@
 
 #include "device-info.h"
 #include "format-dialog.h"
+#include "formatterbase.h"
 #include "fs-parted.h"
 
 enum {
@@ -187,28 +188,43 @@ setup_volume_treeview (FormatDialog* dialog)
 }
 
 static void
-fs_menu_cb(gpointer key, gpointer value, gpointer userdata)
+setup_filesystem_menu(FormatDialog* dialog)
 {
-	GtkMenuShell* fs_menu = GTK_MENU_SHELL(userdata);
-	GtkMenuItem* current = gtk_menu_item_new_with_label((const gchar*)key);
-	gtk_menu_shell_append(fs_menu, current);
+	/* Track down the menu we want to add subitems to */
+	GtkMenuItem* fs_menu_item =  GTK_MENU_ITEM(glade_xml_get_widget(dialog->xml, "menu_fs_list"));
+	GtkMenuShell* fs_menu = GTK_MENU_SHELL(gtk_menu_new());
+
+	GSList* iter;
+	GHashTable* no_dups_list = g_hash_table_new(g_str_hash, g_str_equal);
+	for(iter = dialog->formatter_list; iter != NULL; iter = g_slist_next(iter)) {
+		Formatter* current = iter->data;
+	
+		/* We do the hash nonsense to make sure we don't add duplicates
+		 * (ie parted and mkfs.ext2 both know how to format ext2 or something) */
+		int i;
+		for(i = 0; current->available_fs_list[i] != NULL; i++) {
+			const char* current_fs = current->available_fs_list[i];
+			if( g_hash_table_lookup(no_dups_list, current_fs) )
+				continue;
+
+			GtkWidget* new_menu = gtk_menu_item_new_with_label(current_fs);
+			gtk_widget_set_name(new_menu, current_fs);
+			gtk_menu_shell_append(fs_menu, new_menu);
+			g_hash_table_insert(no_dups_list, current_fs, current);
+		}
+	}
+
+	g_hash_table_destroy(no_dups_list);
+	gtk_menu_item_set_submenu(fs_menu_item, GTK_WIDGET(fs_menu));
 }
 
 static void
-setup_filesystem_menu(FormatDialog* dialog)
+setup_formatter_backends(FormatDialog* dialog)
 {
-	GHashTable* fs_list;
-
-	fs_list = get_fs_list();
-	g_assert(fs_list);
-	
-	/* Track down the menu we want to add subitems to */
-	GtkMenuItem* fs_menu_item =  GTK_MENU_ITEM(glade_xml_get_widget(dialog->xml, "menu_fs_list"));
-	GtkMenu* fs_menu = GTK_MENU(gtk_menu_new());
-
-	g_hash_table_foreach(fs_list, fs_menu_cb, fs_menu);
-	g_hash_table_destroy(fs_list);
-	gtk_menu_item_set_submenu(fs_menu_item, fs_menu);
+	/* Load the various backends that can format block devices */
+	Formatter* parted = parted_formatter_init();
+	if(parted)
+		dialog->formatter_list = g_slist_prepend(dialog->formatter_list, parted);
 }
 
 static gboolean 
@@ -319,7 +335,7 @@ rebuild_volume_combo(FormatDialog* dialog)
 	}
 }
 
-void
+static void
 update_extra_info(FormatDialog* dialog)
 {
 	gboolean show_info = FALSE;
@@ -363,7 +379,7 @@ static void update_options_visibility(FormatDialog* dialog)
 	gboolean valid_iter;
 
 	valid_iter = gtk_combo_box_get_active_iter(dialog->volume_combo, &iter);
-	const FormatVolume* dev;
+	const FormatVolume* dev = NULL;
 
 	if(valid_iter)
 		dev = get_cached_device_from_treeiter(dialog, &iter);
@@ -488,6 +504,7 @@ format_dialog_new(void)
 
 	/* Set stuff in the dialog up */
 	setup_volume_treeview(dialog);	
+	setup_formatter_backends(dialog);
 	setup_filesystem_menu(dialog);
 
 	gtk_widget_show_all (dialog->toplevel);
@@ -519,6 +536,9 @@ void format_dialog_free(FormatDialog* obj)
 
 	if(obj->hal_volume_list)
 		format_volume_list_free(obj->hal_volume_list);
+
+	if(obj->hal_context)
+		libhal_ctx_free(obj->hal_context);
 
 	/* Free our windows */
 	g_object_unref(obj->luks_subwindow);

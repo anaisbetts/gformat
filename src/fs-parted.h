@@ -25,11 +25,14 @@
 #ifndef _FS_PARTED_H
 #define _FS_PARTED_H
 
-#include "parted/constraint.h"
-#include "parted/device.h"
+#include <parted/constraint.h>
+#include <parted/device.h>
+#include "formatterbase.h"
 
-GHashTable* get_fs_list(void);
+Formatter* parted_formatter_init(void);
+
 PedDevice* get_ped(char *path);
 void do_operations(char *path);
+
 
 #endif

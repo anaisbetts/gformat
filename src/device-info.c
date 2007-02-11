@@ -247,6 +247,7 @@ get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume)
 			ret = g_strdup_printf(_("(Unknown Volume) on %s"), tmp);
 		}
 		g_free(tmp);
+		libhal_drive_free(assoc_drv);
 		return ret;
 	}
 
