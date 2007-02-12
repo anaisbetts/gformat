@@ -54,7 +54,6 @@ enum {
 
 #define LUKS_BLKDEV_MIN_SIZE 	(1048576 << 4) 	/* At least 16M */
 
-
 /*
  * Utility Functions
  */
@@ -358,10 +357,18 @@ update_extra_info(FormatDialog* dialog)
 
 		const char* mountpoint = libhal_volume_get_mount_point(vol->volume);
 		char* vol_name = get_friendly_volume_name(dialog->hal_context, vol->volume);
-
-		/* FIXME: The \n is a hack to get the dialog box to not resize 
+                
+                if ( mountpoint == NULL ) {
+                        const char *tmp;
+                        tmp = libhal_volume_get_fstype(vol->volume);
+                        
+                        if ( strcmp (tmp, "swap") == 0 )
+                                mountpoint = g_strdup(tmp);
+                }
+		
+                /* FIXME: The \n is a hack to get the dialog box to not resize 
 		 * horizontally so much */
-		g_snprintf(buf, 512, _("<i>%s\n is currently mounted on '%s'</i>"), vol_name, mountpoint);
+		g_snprintf(buf, 512, _("<i>%s\n is currently mounted on/is '%s'</i>"), vol_name, mountpoint);
 		g_free(vol_name);
 		gtk_label_set_markup(info, buf);
 		show_info |= TRUE;
