@@ -63,7 +63,7 @@ main (int argc, char *argv[])
 	gtk_init(&argc, &argv);
 
 	/* Test stuff */
-        //do_operations("/dev/sdb");
+//        do_operations("/dev/sdb");
 
 	FormatDialog *dialog;
 	dialog = format_dialog_new();

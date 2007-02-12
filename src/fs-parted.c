@@ -123,7 +123,7 @@ timer_handler (PedTimer *timer, void *ctx)
 	fflush(stdout);
     }
 #endif
-        fprintf(stdout, ".");
+        fprintf(stdout, ".\n");
         fflush(stdout);
 }
  

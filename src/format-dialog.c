@@ -362,13 +362,13 @@ update_extra_info(FormatDialog* dialog)
                         const char *tmp;
                         tmp = libhal_volume_get_fstype(vol->volume);
                         
-                        if ( strcmp (tmp, "swap") == 0 )
+                        if ( tmp != NULL && strcmp (tmp, "swap") == 0 )
                                 mountpoint = g_strdup(tmp);
                 }
 		
                 /* FIXME: The \n is a hack to get the dialog box to not resize 
 		 * horizontally so much */
-		g_snprintf(buf, 512, _("<i>%s\n is currently mounted on/is '%s'</i>"), vol_name, mountpoint);
+		g_snprintf(buf, 512, _("<i>%s\n is currently mounted on/as '%s'</i>"), vol_name, mountpoint);
 		g_free(vol_name);
 		gtk_label_set_markup(info, buf);
 		show_info |= TRUE;
