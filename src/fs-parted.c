@@ -44,6 +44,13 @@ parted_formatter_canformat(Formatter* this, const char* blockdev, const char* fs
 }
 #endif
 
+typedef struct {
+        time_t last_update;
+        time_t predicted_time_left;
+} TimerContext;
+                   
+static TimerContext timer_context;
+
 static gboolean 
 parted_formatter_doformat(Formatter* this, const char* blockdev, const char* fs, GHashTable* options, GError** error)
 {
@@ -86,19 +93,42 @@ parted_formatter_init(void)
 	return ret;
 }
 
+static void
+timer_handler (PedTimer *timer, void *ctx)
+{
+        fprintf(stdout, ".");
+        fflush(stdout);
+}
+ 
 void
 do_operations(char *path)
 {
         PedDevice *dev = ped_device_get(path);
         printf("device %s with path %s can be initialized \n", dev->model, dev->path );
        
-      
         PedDisk *disk = ped_disk_new(dev);
-      
-        PedSector  value = 0; 
+        printf("ped_disk end\n");
+       
+        /*
+        PedSector  value = 0;
         PedGeometry *geom = ped_geometry_new( dev, &value, 1);
-
+        */
+        
+        /*for /dev/sdb1 */
+        PedPartition  *part = ped_disk_get_partition (disk, "1");
+        printf("ped_partition end\n");
+ 
+        const PedFileSystemType *type = ped_file_system_type_get ("fat16") ;
+        
+        PedTimer *timer = NULL;
+        timer = ped_timer_new (timer_handler, &timer_context);
+ 
+        printf("ped_filesystem start\n");
+        PedFileSystem *fs = ped_file_system_create (&part->geom, type, timer);
+        printf("ped_filesystem end\n");
+        
+        ped_partition_set_system (part, type);
 
         ped_disk_print(disk);
-      
+     
 }

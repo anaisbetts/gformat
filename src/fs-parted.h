@@ -31,7 +31,6 @@
 
 Formatter* parted_formatter_init(void);
 
-PedDevice* get_ped(char *path);
 void do_operations(char *path);
 
 

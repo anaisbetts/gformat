@@ -63,7 +63,9 @@ main (int argc, char *argv[])
 	gtk_init(&argc, &argv);
 
 	/* Test stuff */
-	//do_operations("/dev/sda");
+	printf("\nmorte\n");
+        do_operations("/dev/sdb");
+        printf("\npost morte\n");
 
 	FormatDialog *dialog;
 	dialog = format_dialog_new();
