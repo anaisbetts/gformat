@@ -461,6 +461,32 @@ on_show_partitions_toggled(GtkWidget* w, gpointer user_data)
 	update_dialog(dialog);
 }
 	
+void on_libhal_device_added_removed(LibHalContext *ctx, const char *udi)
+{
+	g_debug("Added / Removed!");
+	if( !libhal_device_query_capability(ctx, udi, "volume", NULL) &&
+	    !libhal_device_query_capability(ctx, udi, "storage", NULL) )
+		return;
+
+	FormatDialog* dialog = libhal_ctx_get_user_data(ctx);
+	update_dialog(dialog);
+}
+
+void on_libhal_prop_modified (LibHalContext *ctx,
+			      const char *udi,
+			      const char *key,
+			      dbus_bool_t is_removed,
+			      dbus_bool_t is_added)
+{
+	g_debug("Prop Modified!");
+	if( !libhal_device_query_capability(ctx, udi, "volume", NULL) &&
+	    !libhal_device_query_capability(ctx, udi, "storage", NULL) )
+		return;
+
+	FormatDialog* dialog = libhal_ctx_get_user_data(ctx);
+	update_dialog(dialog);
+}
+
 
 /*
  * Public functions
@@ -524,6 +550,13 @@ format_dialog_new(void)
 				_("Make sure the HAL daemon is running and configured correctly"));
 		return NULL;
 	}
+
+	/* Register the HAL device callbacks */
+	g_debug("Registering callback!");
+	libhal_ctx_set_user_data(dialog->hal_context, dialog);
+	libhal_ctx_set_device_added(dialog->hal_context, on_libhal_device_added_removed);
+	libhal_ctx_set_device_removed(dialog->hal_context, on_libhal_device_added_removed);
+	libhal_ctx_set_device_property_modified(dialog->hal_context, on_libhal_prop_modified);
 
 	return dialog;
 }
