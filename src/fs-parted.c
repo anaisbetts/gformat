@@ -97,8 +97,8 @@ static void
 timer_handler (PedTimer *timer, void *ctx)
 {
 
-                int draw_this_time;
-                TimerContext* tctx = (TimerContext*) ctx;
+        int draw_this_time;
+        TimerContext* tctx = (TimerContext*) ctx;
 
         if (tctx->last_update != timer->now && timer->now > timer->start)
         {
@@ -128,38 +128,32 @@ timer_handler (PedTimer *timer, void *ctx)
 }
  
 int
-do_operations(char *path)
+do_operations(char *path, int partnum, char type)
 {
         PedDevice *dev = ped_device_get(path);
-        printf("device %s with path %s can be initialized \n", dev->model, dev->path );
        
         PedDisk *disk = ped_disk_new(dev);
         if (!disk)
                  goto error;
-        printf("ped_disk end\n");
        
-        /*
-        PedSector  value = 0;
-        PedGeometry *geom = ped_geometry_new( dev, &value, 1);
-        */
-        
-        /*for /dev/sdb1 */
-        PedPartition  *part = ped_disk_get_partition (disk, 1);
-        printf("ped_partition end\n");
+        PedPartition  *part = ped_disk_get_partition (disk, partnum);
  
-        const PedFileSystemType *type = ped_file_system_type_get ("fat16") ;
+        const PedFileSystemType *type = ped_file_system_type_get (type) ;
         
         PedTimer *timer = NULL;
         //timer = ped_timer_new (timer_handler, &timer_context);
  
-        printf("ped_filesystem start\n");
         PedFileSystem *fs = ped_file_system_create (&part->geom, type, timer);
-        printf("ped_filesystem end\n");
+        if (!fs)
+                 goto error_destroy_disk;
+        ped_file_system_close (fs);         
         
-        ped_partition_set_system (part, type);
+        if (!ped_partition_set_system (part, type))
+                goto error_destroy_disk;
 
-        ped_disk_print(disk);
-        
+        error_destroy_disk:
+                ped_disk_destroy (disk);
+          
         error:
                 return 0;
 }
