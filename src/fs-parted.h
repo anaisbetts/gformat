@@ -31,7 +31,7 @@
 
 Formatter* parted_formatter_init(void);
 
-void do_operations(char *path);
+int do_operations(char *path);
 
 
 #endif

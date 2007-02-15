@@ -96,7 +96,7 @@ parted_formatter_init(void)
 static void
 timer_handler (PedTimer *timer, void *ctx)
 {
-#if 0
+
                 int draw_this_time;
                 TimerContext* tctx = (TimerContext*) ctx;
 
@@ -122,18 +122,20 @@ timer_handler (PedTimer *timer, void *ctx)
 
 	fflush(stdout);
     }
-#endif
+
         fprintf(stdout, ".\n");
         fflush(stdout);
 }
  
-void
+int
 do_operations(char *path)
 {
         PedDevice *dev = ped_device_get(path);
         printf("device %s with path %s can be initialized \n", dev->model, dev->path );
        
         PedDisk *disk = ped_disk_new(dev);
+        if (!disk)
+                 goto error;
         printf("ped_disk end\n");
        
         /*
@@ -142,13 +144,13 @@ do_operations(char *path)
         */
         
         /*for /dev/sdb1 */
-        PedPartition  *part = ped_disk_get_partition (disk, "1");
+        PedPartition  *part = ped_disk_get_partition (disk, 1);
         printf("ped_partition end\n");
  
         const PedFileSystemType *type = ped_file_system_type_get ("fat16") ;
         
         PedTimer *timer = NULL;
-        timer = ped_timer_new (timer_handler, &timer_context);
+        //timer = ped_timer_new (timer_handler, &timer_context);
  
         printf("ped_filesystem start\n");
         PedFileSystem *fs = ped_file_system_create (&part->geom, type, timer);
@@ -157,5 +159,7 @@ do_operations(char *path)
         ped_partition_set_system (part, type);
 
         ped_disk_print(disk);
-     
+        
+        error:
+                return 0;
 }
