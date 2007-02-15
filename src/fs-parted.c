@@ -128,7 +128,7 @@ timer_handler (PedTimer *timer, void *ctx)
 }
  
 int
-do_format(char *path, int partnum, char type)
+do_format(char *path, int partnum, char fstype)
 {
         PedDevice *dev = ped_device_get(path);
        
@@ -138,12 +138,12 @@ do_format(char *path, int partnum, char type)
        
         PedPartition  *part = ped_disk_get_partition (disk, partnum);
  
-        const PedFileSystemType *type = ped_file_system_type_get (type) ;
+        const PedFileSystemType *type = ped_file_system_type_get (fstype) ;
         
         PedTimer *timer = NULL;
         //timer = ped_timer_new (timer_handler, &timer_context);
  
-        PedFileSystem *fs = ped_file_system_create (&part->geom, type, timer);
+        PedFileSystem *fs = ped_file_system_create (&part->geom, fstype, timer);
         if (!fs)
                  goto error_destroy_disk;
         ped_file_system_close (fs);         
