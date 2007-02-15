@@ -71,6 +71,9 @@ parted_formatter_init(void)
 	Formatter* ret = g_new0(Formatter, 1);
 	const FormatterOps fops = { NULL /*parted_formatter_canformat*/, parted_formatter_doformat, parted_formatter_unref};
 
+	/* Note: This isn't documented in the libparted refs; to get the first 
+	 * filesystem in the list of supported filesystems, you pass NULL as 
+	 * the param to this function */
 	PedFileSystemType* iter = ped_file_system_type_get_next(NULL);
 
 	while(iter != NULL) {
