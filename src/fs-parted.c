@@ -96,7 +96,7 @@ parted_formatter_init(void)
 static void
 timer_handler (PedTimer *timer, void *ctx)
 {
-
+#if 0
         int draw_this_time;
         TimerContext* tctx = (TimerContext*) ctx;
 
@@ -122,13 +122,13 @@ timer_handler (PedTimer *timer, void *ctx)
 
 	fflush(stdout);
     }
-
+#endif
         fprintf(stdout, ".\n");
         fflush(stdout);
 }
  
 int
-do_operations(char *path, int partnum, char type)
+do_format(char *path, int partnum, char type)
 {
         PedDevice *dev = ped_device_get(path);
        
