@@ -44,6 +44,16 @@ parted_formatter_canformat(Formatter* this, const char* blockdev, const char* fs
 }
 #endif
 
+#define error_wrap(exp, err)  do { parted_clear_lasterr(); \
+				   (exp); \
+				   if(err && parted_get_lasterr()) \
+					*err = g_error_new(0, -1, parted_get_lasterr()); \
+				 } while(0)
+
+/*
+ * Structs
+ */
+
 typedef struct {
         time_t last_update;
         time_t predicted_time_left;
@@ -51,9 +61,108 @@ typedef struct {
                    
 static TimerContext timer_context;
 
-static gboolean 
-parted_formatter_doformat(Formatter* this, const char* blockdev, const char* fs, GHashTable* options, GError** error)
+
+/*
+ * Utility Functions
+ */
+
+static gchar *ped_lasterr = NULL;
+
+static void
+parted_clear_lasterr(void) { if(ped_lasterr)		g_free(ped_lasterr); }
+
+static const gchar*
+parted_get_lasterr(void) { return (const gchar*)ped_lasterr; }
+
+static PedExceptionOption
+parted_exception_handler(PedException* ex)
 {
+	/* FIXME: This function doesn't really handle exceptions properly,
+	 * it's just a crappy first attempt */
+	switch(ex->type) {
+	case PED_EXCEPTION_ERROR:
+	case PED_EXCEPTION_FATAL:
+	case PED_EXCEPTION_BUG:
+	case PED_EXCEPTION_NO_FEATURE:
+		parted_clear_lasterr();
+		ped_lasterr = g_strdup(ex->message);
+		break;
+
+	case PED_EXCEPTION_INFORMATION:
+	case PED_EXCEPTION_WARNING:
+	default:
+		return PED_EXCEPTION_OK;
+	}
+
+	return PED_EXCEPTION_UNHANDLED;
+}
+
+static gboolean 
+parted_formatter_doformat(Formatter* this, 
+			  const char* blockdev, 
+			  const char* fs, 
+			  gboolean set_partition_table,
+			  GHashTable* options, 
+			  GError** error)
+{
+	PedDevice* dev;
+        PedDisk* disk;
+	PedGeometry fs_geometry;
+	PedPartition *part = NULL;
+	const PedFileSystemType* fs_type = NULL;
+	gboolean ret = FALSE;
+	int part_num;
+
+        error_wrap( dev = ped_device_get(blockdev), error );
+        if (!dev) 	goto out;
+
+	error_wrap( disk = ped_disk_new(dev), error );
+        if (!disk) 	goto out;
+
+	error_wrap( fs_type = ped_file_system_type_get (fs), error );
+	g_assert(fs_type != NULL);
+	if (!fs_type)	goto out_destroy_disk;
+
+	part_num = get_partnum_from_blockdev(blockdev);
+	set_partition_table = set_partition_table && (part_num > 0);
+
+	if(set_partition_table) {
+		/* XXX: Do we have to free this? It appears to be part of the
+		 * disk */
+		part = ped_disk_get_partition (disk, part_num);
+		memcpy(&fs_geometry, &part->geom, sizeof(PedGeometry));
+	}
+	else {
+		/* We have to manually create a geometry definition for devices
+		 * that have no partition table */
+		fs_geometry.dev = dev;
+		fs_geometry.length = dev->length;
+		fs_geometry.start = 0;	fs_geometry.end = dev->length - 1;
+	}
+
+	/* Actually do the format here */
+	/* We don't care about the timer because creating filesystems takes a
+	 * trivial amount of time */
+	PedFileSystem* pfs;
+	formatter_client_set_text(this, _("Creating file system"));
+	formatter_client_set_progress(this, 0.33);
+	error_wrap( pfs = ped_file_system_create (&fs_geometry, fs_type, NULL), error );
+	if (!pfs) 	goto out_destroy_disk;
+	ped_file_system_close (pfs);         
+
+	/* Fix the partition table */
+	ret = TRUE;
+	formatter_client_set_text(this, _("Setting partition table"));
+	formatter_client_set_progress(this, 0.66);
+	if(set_partition_table)
+		error_wrap( ret = (gboolean)ped_partition_set_system (part, fs_type), error );
+
+	formatter_client_set_progress(this, 1.0);
+
+        out_destroy_disk:
+                ped_disk_destroy (disk);
+        out:
+                return ret;
 }
 
 static void 
@@ -61,6 +170,11 @@ parted_formatter_unref(Formatter* this)
 {
 	g_free(this->available_fs_list);
 }
+
+
+/*
+ * Public Functions
+ */
 
 Formatter*
 parted_formatter_init(void)
@@ -76,6 +190,7 @@ parted_formatter_init(void)
 	 * the param to this function */
 	PedFileSystemType* iter = ped_file_system_type_get_next(NULL);
 
+	/* Figure out the list of supported filesystems */
 	while(iter != NULL) {
 		/* FIXME: It probably isn't kosher to go poking around in
 		 * this structure, but there's no better way to do it */
@@ -89,6 +204,8 @@ parted_formatter_init(void)
 	if(fs_list_count == 0)
 		return NULL;
 
+	/* Initialize the formatter */
+	ped_exception_set_handler(parted_exception_handler);
 	ret->available_fs_list = (const char**)g_new0(char*, fs_list_count + 1);
 	memcpy(ret->available_fs_list, fs_list, sizeof(char*) * fs_list_count);
 	ret->fops = fops;

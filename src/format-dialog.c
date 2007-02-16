@@ -557,6 +557,9 @@ format_dialog_new(void)
 	libhal_ctx_set_device_added(dialog->hal_context, on_libhal_device_added_removed);
 	libhal_ctx_set_device_removed(dialog->hal_context, on_libhal_device_added_removed);
 	libhal_ctx_set_device_property_modified(dialog->hal_context, on_libhal_prop_modified);
+	libhal_ctx_set_device_new_capability(dialog->hal_context, NULL);
+	libhal_ctx_set_device_lost_capability(dialog->hal_context, NULL);
+	libhal_ctx_set_device_condition(dialog->hal_context, NULL);
 
 	return dialog;
 }

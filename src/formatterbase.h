@@ -28,33 +28,56 @@
 /* Forward Declaration */
 typedef struct _Formatter Formatter;
 
+/* FormatterOps declarations */
 typedef gboolean (*FormatterCanFormat) 	(Formatter* this, const char* blockdev, const char* fs);
-
 typedef gboolean (*FormatterDoFormat) 	(Formatter* this, 
 					 const char* blockdev, 
 					 const char* fs, 
+					 gboolean set_partition_table,
 					 GHashTable* options,
 					 GError** error);
-
 typedef void 	 (*FormatterUnref) 	(Formatter* this);
 
+/* FormatterClientOps declarations */
+typedef void 	 (*FormatterSetText) 		(Formatter* this, const gchar* text);
+typedef void 	 (*FormatterSetProgress) 	(Formatter* this, gdouble progress);
+
+/* These functions are implemented by the formatter module */
 typedef struct _FormatterOps 
 {
-	FormatterCanFormat can_format;
-	FormatterDoFormat do_format;
-	FormatterUnref unref;
+	FormatterCanFormat can_format;		/* Optional */
+	FormatterUnref unref;			/* Optional */
+	FormatterDoFormat do_format;		/* Mandatory */
 } FormatterOps;
+
+/* These functions are implemented by the caller and are called by
+ * the specific formatter backend */
+typedef struct _FormatterClientOps
+{
+	FormatterSetText set_text;		/* Optional */
+	FormatterSetProgress set_progress;	/* Optional */
+} FormatterClientOps;
 
 struct _Formatter
 {
 	const char** available_fs_list; 	/* Null-terminated array of const char ptrs */
 	FormatterOps fops;
+	FormatterClientOps fcops;
 	gpointer user_data;
 };
 
-
+void formatter_set_client_ops(GSList* formatter_list, FormatterClientOps ops);
 gboolean formatter_can_format(GSList* formatter_list, const char* fs, const char* blockdev);
-gboolean formatter_do_format(GSList* formatter_list, const char* blockdev, const char* fs, GHashTable* options, GError** error);
+gboolean formatter_do_format(GSList* formatter_list, 
+			     const char* blockdev, 
+			     const char* fs, 
+			     gboolean set_partition_table,
+			     GHashTable* options, 
+			     GError** error);
 void formatter_list_free(GSList* formatter_list);
+void formatter_client_set_text(Formatter* this, const gchar* text);
+void formatter_client_set_progress(Formatter* this, gdouble progress);
+
+int get_partnum_from_blockdev(const char* blockdev);
 
 #endif
