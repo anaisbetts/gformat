@@ -25,6 +25,8 @@
 #ifndef _FORMATTERBASE_H
 #define _FORMATTERBASE_H
 
+#define FORMATTER_DONT_SET_PARTITION 		-1
+
 /* Forward Declaration */
 typedef struct _Formatter Formatter;
 
@@ -33,11 +35,10 @@ typedef gboolean (*FormatterCanFormat) 	(Formatter* this, const char* blockdev, 
 typedef gboolean (*FormatterDoFormat) 	(Formatter* this, 
 					 const char* blockdev, 
 					 const char* fs, 
-					 gboolean set_partition_table,
+					 int partition_number, 	/* Partition number or FORMATTER_DONT_SET_PARTITION */
 					 GHashTable* options,
 					 GError** error);
 typedef void 	 (*FormatterUnref) 	(Formatter* this);
-
 /* FormatterClientOps declarations */
 typedef void 	 (*FormatterSetText) 		(Formatter* this, const gchar* text);
 typedef void 	 (*FormatterSetProgress) 	(Formatter* this, gdouble progress);
@@ -63,15 +64,17 @@ struct _Formatter
 	const char** available_fs_list; 	/* Null-terminated array of const char ptrs */
 	FormatterOps fops;
 	FormatterClientOps fcops;
-	gpointer user_data;
+	gpointer client_data;			/* This is reserved for the client */
+	gpointer user_data;			/* This is reserved for the formatter backend */
 };
 
 void formatter_set_client_ops(GSList* formatter_list, FormatterClientOps ops);
+void formatter_set_client_data(GSList* formatter_list, gpointer client_data);
 gboolean formatter_can_format(GSList* formatter_list, const char* fs, const char* blockdev);
 gboolean formatter_do_format(GSList* formatter_list, 
 			     const char* blockdev, 
 			     const char* fs, 
-			     gboolean set_partition_table,
+			     int partition_number,
 			     GHashTable* options, 
 			     GError** error);
 void formatter_list_free(GSList* formatter_list);

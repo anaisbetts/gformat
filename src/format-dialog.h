@@ -39,6 +39,8 @@ typedef struct _FormatDialog {
 	GHashTable* icon_cache;
 	GtkLabel* extra_volume_info;
 	GtkHBox* extra_volume_hbox;
+	GtkButton* format_button;
+	GtkProgress* progress_bar;
 
 	/* HAL info */
 	LibHalContext* hal_context;
@@ -48,7 +50,26 @@ typedef struct _FormatDialog {
 	/* Formatting backends list */
 	GSList* formatter_list;
 
+	/* Progress bar stuff */
+	GMutex* progress_lock;
+	gdouble progress_value;
+	const gchar progress_text[512];
+	gboolean is_formatting;
+
 } FormatDialog;
+
+/* Dumb struct to pass data to the worker thread */
+typedef struct _fmt_thread_params {
+	FormatDialog* dialog;
+	FormatVolume* vol;
+	gchar* blockdev;			/* This is redundant, but it's to make threading stuff easier */
+	gchar* fs;
+	gboolean do_encrypt;
+	gboolean do_partition_table;
+	int partition_number;
+	GHashTable* options;
+	GError* error;
+} fmt_thread_params;
 
 FormatDialog* format_dialog_new(void);
 void format_dialog_free(FormatDialog* obj);

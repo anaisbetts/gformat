@@ -101,7 +101,7 @@ static gboolean
 parted_formatter_doformat(Formatter* this, 
 			  const char* blockdev, 
 			  const char* fs, 
-			  gboolean set_partition_table,
+			  int partition_number,
 			  GHashTable* options, 
 			  GError** error)
 {
@@ -111,7 +111,6 @@ parted_formatter_doformat(Formatter* this,
 	PedPartition *part = NULL;
 	const PedFileSystemType* fs_type = NULL;
 	gboolean ret = FALSE;
-	int part_num;
 
         error_wrap( dev = ped_device_get(blockdev), error );
         if (!dev) 	goto out;
@@ -123,13 +122,10 @@ parted_formatter_doformat(Formatter* this,
 	g_assert(fs_type != NULL);
 	if (!fs_type)	goto out_destroy_disk;
 
-	part_num = get_partnum_from_blockdev(blockdev);
-	set_partition_table = set_partition_table && (part_num > 0);
-
-	if(set_partition_table) {
+	if(partition_number != FORMATTER_DONT_SET_PARTITION) {
 		/* XXX: Do we have to free this? It appears to be part of the
 		 * disk */
-		part = ped_disk_get_partition (disk, part_num);
+		part = ped_disk_get_partition (disk, partition_number);
 		memcpy(&fs_geometry, &part->geom, sizeof(PedGeometry));
 	}
 	else {
@@ -154,7 +150,7 @@ parted_formatter_doformat(Formatter* this,
 	ret = TRUE;
 	formatter_client_set_text(this, _("Setting partition table"));
 	formatter_client_set_progress(this, 0.66);
-	if(set_partition_table)
+	if(partition_number != FORMATTER_DONT_SET_PARTITION)
 		error_wrap( ret = (gboolean)ped_partition_set_system (part, fs_type), error );
 
 	formatter_client_set_progress(this, 1.0);

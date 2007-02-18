@@ -54,6 +54,7 @@ enum {
 
 #define LUKS_BLKDEV_MIN_SIZE 	(1048576 << 4) 	/* At least 16M */
 
+
 /*
  * Utility Functions
  */
@@ -120,6 +121,86 @@ floppy_valid_for_device (const FormatVolume* dev)
 	return FALSE;
 }
 
+static void
+formatter_handle_error(gpointer data)
+{
+	fmt_thread_params* params = data;
+	gchar* pri_msg = g_strdup_printf(_("There was an error formatting %s", params->vol->friendly_name));
+	show_error_dialog(params->dialog, pri_msg, params->error->message);
+
+	g_error_free(params->error);
+	g_free(params);
+}
+
+static gpointer
+formatter_do_format_thread(gpointer data)
+{
+	/* The responsibility of who frees this data is tricky:
+	 * Most of the data freed here, even though it was 
+	 * allocated by the function that created the thread. 
+	 * The exception to this is the struct itself and the GError.
+	 * If there was an error, the struct itself is freed by
+	 * formatter_handle_error, otherwise it's freed here */
+	fmt_thread_params* params = data;
+	if(!formatter_do_format(params->dialog->formatter_list, 
+				params->blockdev,
+				params->fs,
+				params->partition_number,
+				params->options,
+				params->error)) {
+		/* Always make sure there is an error on failure */
+		params->error = (params->error ? params->error : g_error_new(0, -1, _("Unknown error")));
+	}
+
+	g_free(params->blockdev);
+	g_free(params->fs);
+
+	if(!params->error) {
+		g_free(params);
+	} else {
+		g_idle_add(formatter_handle_error, params);
+	}
+
+	return 0;
+}
+
+static void
+formatter_update_bar(gpointer data)
+{
+	FormatDialog* dialog = data;
+	if(!g_mutex_trylock(dialog->progress_lock)) {
+		/* Update the UI and try again */
+		g_idle_add(formatter_update_bar, data);
+		return;
+	}
+
+	gtk_progress_bar_set_text(dialog->progress_bar, dialog->progress_text);
+	gtk_progress_bar_set_fraction(dialog->progress_bar, dialog->progress_value);
+
+	g_mutex_unlock(dialog->progress_lock);
+}
+
+static void
+formatter_set_text(Formatter* this, const gchar* text)
+{
+	FormatDialog* dialog = this->client_data;
+
+	g_mutex_lock(dialog->progress_lock);
+	strncpy(dialog->progress_text, text, 500);
+	g_mutex_unlock(dialog->progress_lock);
+	gtk_idle_add(formatter_update_bar, dialog);
+}
+
+static void
+formatter_set_progress(Formatter* this, gdouble progress)
+{
+	FormatDialog* dialog = this->client_data;
+	g_mutex_lock(dialog->progress_lock);
+	dialog->progress_value = progress;
+	g_mutex_unlock(dialog->progress_lock);
+	gtk_idle_add(formatter_update_bar, dialog);
+}
+
 static const FormatVolume* 
 get_cached_device_from_udi(FormatDialog* dialog, const char* udi)
 {
@@ -160,6 +241,11 @@ get_cached_device_from_treeiter(FormatDialog* dialog, GtkTreeIter* iter)
 
 	g_free(udi);	return ret;
 }
+
+
+/*
+ * High-level functions (aka 'big' functions)
+ */
 
 static void 
 setup_volume_treeview (FormatDialog* dialog)
@@ -217,6 +303,7 @@ setup_filesystem_menu(FormatDialog* dialog)
 	gtk_menu_item_set_submenu(fs_menu_item, GTK_WIDGET(fs_menu));
 }
 
+
 static void
 setup_formatter_backends(FormatDialog* dialog)
 {
@@ -224,6 +311,11 @@ setup_formatter_backends(FormatDialog* dialog)
 	Formatter* parted = parted_formatter_init();
 	if(parted)
 		dialog->formatter_list = g_slist_prepend(dialog->formatter_list, parted);
+
+	/* Set callbacks to various backend events */
+	FormatterClientOps fcops = { formatter_set_text, formatter_set_progress };
+	formatter_set_client_ops(dialog->formatter_list, fcops);
+	formatter_set_client_data(dialog->formatter_list, dialog);
 }
 
 static gboolean 
@@ -409,11 +501,20 @@ static void update_options_visibility(FormatDialog* dialog)
 }
 
 static void
+update_sensitivity(FormatDialog* dialog)
+{
+	/* FIXME: We should probably disable other stuff while formatting too */
+	gtk_widget_set_sensitive(GTK_WIDGET(dialog->format_button), !dialog->is_formatting);
+}
+
+static void
 update_dialog(FormatDialog* dialog)
 {
 	rebuild_volume_combo(dialog);
 	update_extra_info(dialog);
 	update_options_visibility(dialog);
+	formatter_update_bar(dialog);
+	update_sensitivity(dialog);
 }
 
 
@@ -487,6 +588,32 @@ void on_libhal_prop_modified (LibHalContext *ctx,
 	update_dialog(dialog);
 }
 
+void
+on_format_button_clicked(GtkWidget* w, gpointer user_data)
+{
+	FormatDialog* dialog = g_object_get_data( G_OBJECT(gtk_widget_get_toplevel(w)), "userdata" );
+
+	/* TODO: Make a "OMG THIS WILL TEH TRASH UR USB!" dialog box */
+
+	/* Figure out the device params */
+	GtkTreeIter iter;
+	if(!gtk_combo_box_get_active_iter(dialog->volume_combo, &iter))
+		return;
+	FormatVolume* vol;
+	if( !(vol = get_cached_device_from_treeiter(vol)) )
+		return;
+	if(vol->volume) {
+		params->blockdev = g_strdup(libhal_volume_get_device_file(vol->volume));
+		params->partition_number = libhal_volume_get_partition_number(vol->volume);
+	} else {
+		/* XXX: We need to repoll the device list once we write a new partition table */
+		//blockdev = g_strdup(libhal_drive_get_device_file(
+	}
+
+	/* Load the params into a struct so we can async format the drive */
+	fmt_thread_params* params = g_new0(fmt_thread_params, 1);
+	params->dialog = dialog;
+}
 
 /*
  * Public functions
@@ -497,6 +624,7 @@ format_dialog_new(void)
 {
 	FormatDialog *dialog;
 	dialog = g_new0 (FormatDialog, 1);
+	dialog->progress_lock = g_mutex_new();
 	const char* xmlpath = GLADEDIR "/gformat.glade";
 
 	dialog->xml = glade_xml_new (xmlpath, "toplevel", NULL);
@@ -524,6 +652,8 @@ format_dialog_new(void)
 	dialog->show_partitions = GTK_TOGGLE_BUTTON(glade_xml_get_widget(dialog->xml, "show_partitions"));
 	dialog->extra_volume_info = GTK_LABEL(glade_xml_get_widget(dialog->xml, "extra_volume_info"));
 	dialog->extra_volume_hbox = GTK_HBOX(glade_xml_get_widget(dialog->xml, "extra_volume_hbox"));
+	dialog->progress_bar = GTK_PROGRESS_BAR(glade_xml_get_widget(dialog->xml, "progress_bar"));
+	dialog->format_button = GTK_BUTTON(glade_xml_get_widget(dialog->xml, "format_button"));
 	g_assert(dialog->toplevel != NULL);
 
 	dialog->luks_subwindow = GTK_BOX(glade_xml_get_widget (dialog->xml, "luks_subwindow"));
@@ -590,5 +720,6 @@ void format_dialog_free(FormatDialog* obj)
 	g_object_unref(obj->toplevel);
 	g_object_unref(obj->xml);
 
+	g_mutex_free(obj->progress_lock);
 	g_free(obj);
 }

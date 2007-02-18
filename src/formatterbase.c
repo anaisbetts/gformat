@@ -59,6 +59,17 @@ formatter_set_client_ops(GSList* formatter_list, FormatterClientOps ops)
 	}
 }
 
+
+void 
+formatter_set_client_data(GSList* formatter_list, gpointer data)
+{
+	GSList* iter = formatter_list;
+	for(iter = formatter_list; iter != NULL; iter = g_slist_next(iter)) {
+		Formatter* current = iter->data;
+		current->client_data = client_data;
+	}
+}
+
 gboolean
 formatter_can_format(GSList* formatter_list, const char* fs, const char* blockdev)
 {
@@ -79,7 +90,7 @@ gboolean
 formatter_do_format(GSList* formatter_list, 
 		    const char* blockdev, 
 		    const char* fs, 
-		    gboolean set_partition_table,
+		    int partition_number,
 		    GHashTable* options, 
 		    GError** error)
 {
@@ -93,7 +104,7 @@ formatter_do_format(GSList* formatter_list,
 		if( !(*can_format)(current, fs, blockdev) )
 			continue;
 		g_assert(current->fops.do_format != NULL);
-		return (*(current->fops.do_format))(current, blockdev, fs, set_partition_table, options, error);
+		return (*(current->fops.do_format))(current, blockdev, fs, partition_number, options, error);
 	}
 
 	return FALSE;
