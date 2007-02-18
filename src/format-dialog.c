@@ -121,15 +121,16 @@ floppy_valid_for_device (const FormatVolume* dev)
 	return FALSE;
 }
 
-static void
+static gboolean
 formatter_handle_error(gpointer data)
 {
 	fmt_thread_params* params = data;
-	gchar* pri_msg = g_strdup_printf(_("There was an error formatting %s", params->vol->friendly_name));
-	show_error_dialog(params->dialog, pri_msg, params->error->message);
+	gchar* pri_msg = g_strdup_printf(_("There was an error formatting %s"), params->vol->friendly_name);
+	show_error_dialog(params->dialog->toplevel, pri_msg, params->error->message);
 
 	g_error_free(params->error);
 	g_free(params);
+	return FALSE;
 }
 
 static gpointer
@@ -147,7 +148,7 @@ formatter_do_format_thread(gpointer data)
 				params->fs,
 				params->partition_number,
 				params->options,
-				params->error)) {
+				&params->error)) {
 		/* Always make sure there is an error on failure */
 		params->error = (params->error ? params->error : g_error_new(0, -1, _("Unknown error")));
 	}
@@ -164,20 +165,20 @@ formatter_do_format_thread(gpointer data)
 	return 0;
 }
 
-static void
+static gboolean
 formatter_update_bar(gpointer data)
 {
 	FormatDialog* dialog = data;
 	if(!g_mutex_trylock(dialog->progress_lock)) {
 		/* Update the UI and try again */
-		g_idle_add(formatter_update_bar, data);
-		return;
+		return TRUE;
 	}
 
 	gtk_progress_bar_set_text(dialog->progress_bar, dialog->progress_text);
 	gtk_progress_bar_set_fraction(dialog->progress_bar, dialog->progress_value);
 
 	g_mutex_unlock(dialog->progress_lock);
+	return FALSE;
 }
 
 static void
@@ -591,7 +592,11 @@ void on_libhal_prop_modified (LibHalContext *ctx,
 void
 on_format_button_clicked(GtkWidget* w, gpointer user_data)
 {
+	/* FIXME: Stop from entering function that isn't finished yet */
+	return;
+
 	FormatDialog* dialog = g_object_get_data( G_OBJECT(gtk_widget_get_toplevel(w)), "userdata" );
+	fmt_thread_params* params = g_new0(fmt_thread_params, 1);
 
 	/* TODO: Make a "OMG THIS WILL TEH TRASH UR USB!" dialog box */
 
@@ -600,7 +605,7 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 	if(!gtk_combo_box_get_active_iter(dialog->volume_combo, &iter))
 		return;
 	FormatVolume* vol;
-	if( !(vol = get_cached_device_from_treeiter(vol)) )
+	if( !(vol = get_cached_device_from_treeiter(dialog, &iter)) )
 		return;
 	if(vol->volume) {
 		params->blockdev = g_strdup(libhal_volume_get_device_file(vol->volume));
@@ -611,7 +616,6 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 	}
 
 	/* Load the params into a struct so we can async format the drive */
-	fmt_thread_params* params = g_new0(fmt_thread_params, 1);
 	params->dialog = dialog;
 }
 

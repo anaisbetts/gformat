@@ -66,7 +66,7 @@ formatter_set_client_data(GSList* formatter_list, gpointer data)
 	GSList* iter = formatter_list;
 	for(iter = formatter_list; iter != NULL; iter = g_slist_next(iter)) {
 		Formatter* current = iter->data;
-		current->client_data = client_data;
+		current->client_data = data;
 	}
 }
 

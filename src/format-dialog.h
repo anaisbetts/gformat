@@ -24,6 +24,8 @@
 #ifndef _FORMAT_DIALOG_H
 #define _FORMAT_DIALOG_H
 
+#include "device-info.h"
+
 typedef struct _FormatDialog {
 	GladeXML* xml;
 	GtkWidget* toplevel;
@@ -40,7 +42,7 @@ typedef struct _FormatDialog {
 	GtkLabel* extra_volume_info;
 	GtkHBox* extra_volume_hbox;
 	GtkButton* format_button;
-	GtkProgress* progress_bar;
+	GtkProgressBar* progress_bar;
 
 	/* HAL info */
 	LibHalContext* hal_context;
@@ -53,9 +55,8 @@ typedef struct _FormatDialog {
 	/* Progress bar stuff */
 	GMutex* progress_lock;
 	gdouble progress_value;
-	const gchar progress_text[512];
+	char progress_text[512];
 	gboolean is_formatting;
-
 } FormatDialog;
 
 /* Dumb struct to pass data to the worker thread */
