@@ -61,10 +61,8 @@ main (int argc, char *argv[])
 	g_option_context_free (context);
 
 	gtk_init(&argc, &argv);
-
-	/* Test stuff */
-        //do_operations("/dev/sdb");
-
+        g_thread_init (NULL);
+	
 	FormatDialog *dialog;
 	dialog = format_dialog_new();
 	if(dialog != NULL) {

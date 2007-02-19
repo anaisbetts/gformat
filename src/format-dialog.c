@@ -630,10 +630,11 @@ format_dialog_new(void)
 	dialog = g_new0 (FormatDialog, 1);
 	dialog->progress_lock = g_mutex_new();
 	const char* xmlpath = GLADEDIR "/gformat.glade";
-
+        
 	dialog->xml = glade_xml_new (xmlpath, "toplevel", NULL);
 	
-	/* Try uninstalled next */
+	
+        /* Try uninstalled next */
 	if (!dialog->xml) {
 		xmlpath = "./gformat.glade";
 		dialog->xml = glade_xml_new (xmlpath, "toplevel", NULL);
