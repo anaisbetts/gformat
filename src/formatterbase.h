@@ -25,6 +25,8 @@
 #ifndef _FORMATTERBASE_H
 #define _FORMATTERBASE_H
 
+#include "partutil.h"
+
 #define FORMATTER_DONT_SET_PARTITION 		-1
 
 /* Forward Declaration */
@@ -38,6 +40,7 @@ typedef gboolean (*FormatterDoFormat) 	(Formatter* this,
 					 int partition_number, 	/* Partition number or FORMATTER_DONT_SET_PARTITION */
 					 GHashTable* options,
 					 GError** error);
+typedef PartitionScheme (*FormatterTableHint)  	(Formatter* this, const char* blockdev, const char* fs);
 typedef void 	 (*FormatterUnref) 	(Formatter* this);
 /* FormatterClientOps declarations */
 typedef void 	 (*FormatterSetText) 		(Formatter* this, const gchar* text);
@@ -47,6 +50,7 @@ typedef void 	 (*FormatterSetProgress) 	(Formatter* this, gdouble progress);
 typedef struct _FormatterOps 
 {
 	FormatterCanFormat can_format;		/* Optional */
+	FormatterTableHint table_hint;		/* Optional */
 	FormatterUnref unref;			/* Optional */
 	FormatterDoFormat do_format;		/* Mandatory */
 } FormatterOps;
@@ -71,6 +75,7 @@ struct _Formatter
 void formatter_set_client_ops(GSList* formatter_list, FormatterClientOps ops);
 void formatter_set_client_data(GSList* formatter_list, gpointer client_data);
 gboolean formatter_can_format(GSList* formatter_list, const char* fs, const char* blockdev);
+PartitionScheme formatter_table_hint(GSList* formatter_list, const char* fs, const char* blockdev);
 gboolean formatter_do_format(GSList* formatter_list, 
 			     const char* blockdev, 
 			     const char* fs, 

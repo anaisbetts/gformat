@@ -531,7 +531,7 @@ on_help_button_clicked (GtkWidget *w, gpointer user_data)
 	gnome_help_display_desktop_on_screen (NULL, "gformat", "gformat", "usage", 
 					      gtk_widget_get_screen (w), &error);
 	if (error) {
-		show_error_dialog (gtk_widget_get_toplevel(w), _("Could not display help for the floppy formatter."), error->message);
+		show_error_dialog (gtk_widget_get_toplevel(w), _("Could not display help for the disk formatter."), error->message);
 		g_error_free (error);
 	}
 }
@@ -597,8 +597,11 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 
 	FormatDialog* dialog = g_object_get_data( G_OBJECT(gtk_widget_get_toplevel(w)), "userdata" );
 	fmt_thread_params* params = g_new0(fmt_thread_params, 1);
+	GError* err = NULL;
 
 	/* TODO: Make a "OMG THIS WILL TEH TRASH UR USB!" dialog box */
+
+	/* TODO: Figure out what to do if it's mounted */
 
 	/* Figure out the device params */
 	GtkTreeIter iter;
@@ -607,16 +610,57 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 	FormatVolume* vol;
 	if( !(vol = get_cached_device_from_treeiter(dialog, &iter)) )
 		return;
+	params->fs = "ext2";		/* FIXME: Figure out how to snag the current menu item */
+
 	if(vol->volume) {
 		params->blockdev = g_strdup(libhal_volume_get_device_file(vol->volume));
 		params->partition_number = libhal_volume_get_partition_number(vol->volume);
+		params->vol = vol;
 	} else {
-		/* XXX: We need to repoll the device list once we write a new partition table */
-		//blockdev = g_strdup(libhal_drive_get_device_file(
+		/* TODO: Figure out what to do if any other partition is mounted on this drive */
+		char* drive_udi = g_strdup(libhal_drive_get_udi(vol->drive));
+
+		/* Write out a new table */
+		const char* dev = libhal_drive_get_device_file(vol->drive);
+		if(!write_partition_table_for_device(vol->drive, formatter_get_table_hint(vol->drive, dev, params->fs), 
+						     &err)) {
+			show_error_dialog(dialog->toplevel, _("Error formatting disk"), err->message);
+			g_error_free(err);
+			goto error_out;
+		}
+		
+		/* Find the partition attached to our drive */
+		if(!update_device_lists(dialog))	goto error_out;
+		GSList* iter; 
+		for(iter = dialog->hal_volume_list; iter != NULL; iter = g_slist_next(iter)) {
+			FormatVolume* vol = iter->data;
+			if(!strcmp(vol->drive_udi, drive_udi))	break;
+		}
+		if(iter == NULL) {
+			show_error_dialog(dialog->toplevel, _("Error formatting disk"), 
+					  _("Can't find new partition after formatting. Try again"));
+			goto error_out;
+		}
+
+		params->vol = iter->data;
+		params->blockdev = libhal_volume_get_device_file(params->vol);
+		params->partition_number = 1;
 	}
 
 	/* Load the params into a struct so we can async format the drive */
 	params->dialog = dialog;
+	params->options = NULL;
+	params->do_encrypt = FALSE;		/* FIXME: We have to figure this out */
+	params->do_partition_table = TRUE;
+
+	GThread* worker = g_thread_create(formatter_do_format_thread, params, TRUE, NULL);
+	if(!worker) 	goto error_out;
+	g_thread_join(worker);
+
+	return;
+
+error_out:
+	g_free(params);
 }
 
 /*

@@ -67,6 +67,7 @@ char* get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume);
 gchar* get_friendly_volume_info(LibHalContext* ctx, LibHalVolume* volume);
 
 GHashTable* create_icon_cache(void);
+gboolean write_partition_table_for_device(LibHalDrive* drive, PartitionScheme scheme, GError** error);
 GSList* build_volume_list(LibHalContext* ctx, 
 		  enum FormatVolumeType type, 
 		  GHashTable* icon_cache, 

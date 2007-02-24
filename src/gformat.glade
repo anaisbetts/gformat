@@ -884,7 +884,7 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkProgressBar" id="progressbar">
+	    <widget class="GtkProgressBar" id="progress_bar">
 	      <property name="visible">True</property>
 	      <property name="orientation">GTK_PROGRESS_LEFT_TO_RIGHT</property>
 	      <property name="fraction">0</property>
@@ -959,7 +959,7 @@
 	      </child>
 
 	      <child>
-		<widget class="GtkButton" id="button18">
+		<widget class="GtkButton" id="format_button">
 		  <property name="visible">True</property>
 		  <property name="can_default">True</property>
 		  <property name="has_default">True</property>

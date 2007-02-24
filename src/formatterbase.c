@@ -44,6 +44,12 @@ default_formatter_can_format(Formatter* fmtr, const char* blockdev, const char* 
 	return FALSE;
 }
 
+PartitionScheme 
+default_formatter_table_hint(Formatter* this, const char* blockdev, const char* fs)
+{
+	return PART_TYPE_MSDOS;
+}
+
 
 /*
  * Public Functions
@@ -58,7 +64,6 @@ formatter_set_client_ops(GSList* formatter_list, FormatterClientOps ops)
 		current->fcops = ops;
 	}
 }
-
 
 void 
 formatter_set_client_data(GSList* formatter_list, gpointer data)
@@ -84,6 +89,23 @@ formatter_can_format(GSList* formatter_list, const char* fs, const char* blockde
 			return TRUE;
 	}
 	return FALSE;
+}
+
+PartitionScheme 
+formatter_table_hint (Formatter* this, const char* blockdev, const char* fs)
+{
+	GSList* iter = formatter_list;
+	for(iter = formatter_list; iter != NULL; iter = g_slist_next(iter)) {
+		Formatter* current = iter->data;
+		FormatterTableHint table_hint = (current->fops.table_hint ? 
+						 current->fops.table_hint : 
+						 default_formatter_table_hint);
+
+		return (*table_hint)(current, fs, blockdev);
+	}
+
+	/* FIXME: This isn't exactly...right */
+	return (PartitionScheme)NULL;
 }
 
 gboolean

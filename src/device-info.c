@@ -38,6 +38,7 @@
 #include <libgnomevfs/gnome-vfs-utils.h>
 
 #include "device-info.h"
+#include "partutil.h"
 
 void 
 format_volume_free(FormatVolume* fvol)
@@ -283,6 +284,111 @@ get_friendly_volume_info(LibHalContext* ctx, LibHalVolume* volume)
 }
 
 
+/* from <linux/ioctl.h> */
+#define _IOC_NONE	0U
+#define _IOC_WRITE	1U
+#define _IOC_READ	2U
+#define _IOC(dir,type,nr,size) \
+	(((dir)  << _IOC_DIRSHIFT) | \
+	 ((type) << _IOC_TYPESHIFT) | \
+	 ((nr)   << _IOC_NRSHIFT) | \
+	 ((size) << _IOC_SIZESHIFT))
+
+/* from <linux/fs.h> */
+#define _IO(type,nr)		_IOC(_IOC_NONE,(type),(nr),0)
+#define BLKRRPART  _IO(0x12,95) /* re-read partition table */
+
+gboolean
+repoll_partition_table_linux(const char* dev)
+{
+	int fd = open(dev, O_RDWR);
+	int retry_count = 5;
+	if(fd < 1)	return FALSE;
+sync();
+        while (ioctl (fd, BLKRRPART)) {
+                retry_count--;
+                sync();
+                if (!retry_count)
+			goto out;
+        }
+
+	/* Wait awhile for the kernel to repoll */
+	sleep(1);
+
+out:
+	close(fd);
+	return TRUE;
+}
+
+gboolean
+repoll_partition_table(const char* dev)
+{
+	/* FIXME: We need to dispatch to other places for Solaris
+	 * and BSD */
+	return repoll_partition_table_linux(dev);
+}
+
+gboolean
+write_partition_table_for_device(LibHalDrive* drive, PartitionScheme scheme, GError** error)
+{
+	const char* msg;
+	g_assert(drive);
+
+	char* dev = libhal_drive_get_device_file(drive);
+	g_assert(dev);
+	if(!dev)	return FALSE;
+
+	/* Create a new table first */
+	if(!part_create_partition_table(dev, scheme)) {
+		msg =  _("Cannot create partition table on %s");
+		goto error_out;
+	}
+
+	/* Create one partition in this table; we start the FS at sector
+	 * 63 */
+	const int start = 512*63;
+	guint64 size = (guint64)libhal_drive_get_size(drive);
+	if(size < start) {
+		msg = _("Cannot create partition table on %s");
+		goto error_out;
+	}
+
+	/* This doesn't matter, we're going to reset it later;
+	 * we just need something to give to part_add_partition */
+	const char* type;
+	switch(scheme) {
+	case PART_TYPE_GPT:
+		type = "{}"; /* FIXME: Some lame GUID */
+		break;
+	case PART_TYPE_APPLE:
+		type = "DOS_FAT_32";
+		break;
+	default:
+		type = "0x83";
+	}
+
+	guint64 dontcare;
+	if(!part_add_partition(dev, start, size, &dontcare, &dontcare, 
+			       (char*)type, NULL, NULL, 0, 0)) {
+		msg = _("Cannot add new partition on %s");
+		goto error_out;
+	}
+
+	if(!repoll_partition_table(dev)) {
+		msg = _("The kernel cannot repoll the partition table on %s. "
+			"Please reboot the computer or reinsert this disk if it "
+			"is removable and try again.");
+		goto error_out;
+	}
+
+	return TRUE;
+
+error_out:
+	char* name = get_friendly_drive_name(drive);
+	g_set_error(error, 0, 0, _("Cannot create partition table on %s"), name);
+	g_free(name);
+	return FALSE;
+}
 
 GSList* 
 build_volume_list(LibHalContext* ctx, 
