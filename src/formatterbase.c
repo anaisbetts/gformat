@@ -175,3 +175,10 @@ get_partnum_from_blockdev(const char* blockdev)
 	if(!one_seen)	return -1;
 	return atoi(blockdev+i);
 }
+
+
+/*
+ * High-level Formatting functions
+ */
+
+

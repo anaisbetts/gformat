@@ -355,6 +355,40 @@ update_device_lists(FormatDialog* dialog)
 	return TRUE;
 }
 
+static FormatVolume*
+write_partition_table(FormatDialog* dialog, FormatVolume* drive)
+{
+	FormatVolume* ret = NULL;
+	char* drive_udi = g_strdup(libhal_drive_get_udi(vol->drive));
+
+	/* Write out a new table */
+	const char* dev = libhal_drive_get_device_file(vol->drive);
+	if(!write_partition_table_for_device(vol->drive, formatter_get_table_hint(vol->drive, dev, params->fs), 
+				&err)) {
+		show_error_dialog(dialog->toplevel, _("Error formatting disk"), err->message);
+		g_error_free(err);
+		goto out;
+	}
+
+	/* Find the partition attached to our drive */
+	if(!update_device_lists(dialog))	goto out;
+	GSList* iter; 
+	for(iter = dialog->hal_volume_list; iter != NULL; iter = g_slist_next(iter)) {
+		FormatVolume* vol = iter->data;
+		if(!strcmp(vol->drive_udi, drive_udi))	break;
+	}
+	if(iter == NULL) {
+		show_error_dialog(dialog->toplevel, _("Error formatting disk"), 
+				_("Can't find new partition after formatting. Try again"));
+		goto out;
+	}
+
+	ret = iter->data;
+
+out:
+	return ret;
+}
+
 static void
 rebuild_volume_combo(FormatDialog* dialog)
 {
@@ -618,31 +652,10 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 		params->vol = vol;
 	} else {
 		/* TODO: Figure out what to do if any other partition is mounted on this drive */
-		char* drive_udi = g_strdup(libhal_drive_get_udi(vol->drive));
 
-		/* Write out a new table */
-		const char* dev = libhal_drive_get_device_file(vol->drive);
-		if(!write_partition_table_for_device(vol->drive, formatter_get_table_hint(vol->drive, dev, params->fs), 
-						     &err)) {
-			show_error_dialog(dialog->toplevel, _("Error formatting disk"), err->message);
-			g_error_free(err);
+		if(!(params->vol = write_partition_table(dialog, vol)))
 			goto error_out;
-		}
 		
-		/* Find the partition attached to our drive */
-		if(!update_device_lists(dialog))	goto error_out;
-		GSList* iter; 
-		for(iter = dialog->hal_volume_list; iter != NULL; iter = g_slist_next(iter)) {
-			FormatVolume* vol = iter->data;
-			if(!strcmp(vol->drive_udi, drive_udi))	break;
-		}
-		if(iter == NULL) {
-			show_error_dialog(dialog->toplevel, _("Error formatting disk"), 
-					  _("Can't find new partition after formatting. Try again"));
-			goto error_out;
-		}
-
-		params->vol = iter->data;
 		params->blockdev = libhal_volume_get_device_file(params->vol);
 		params->partition_number = 1;
 	}

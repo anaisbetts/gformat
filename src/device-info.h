@@ -32,6 +32,8 @@
 #include <libhal.h>
 #include <libhal-storage.h>
 
+#include "partutil.h"
+
 typedef struct FormatVolume FormatVolume;
 
 /* Some explanation is in order: Since it's plausible that one would want to
