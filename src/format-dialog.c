@@ -52,6 +52,12 @@ enum {
 	DEV_COLUMN_SENSITIVE,
 };
 
+enum {
+	FS_COLUMN_REALNAME = 0,
+	FS_COLUMN_MARKUP,
+	FS_COLUMN_SENSITIVE,
+};
+
 #define LUKS_BLKDEV_MIN_SIZE 	(1048576 << 4) 	/* At least 16M */
 
 
@@ -87,6 +93,12 @@ get_fs_from_menuitem_name(const gchar* menuitem_name)
 			return ret+1;
 	}
 	return ret;
+}
+
+static const gchar*
+get_fs_from_menu(FormatDialog* dialog)
+{
+
 }
 
 gchar*
@@ -136,6 +148,16 @@ formatter_handle_error(gpointer data)
 static gboolean
 formatter_do_format(gpointer data)
 {
+	FormatDialog* dialog = data;
+	FormatVolume* vol;
+	char* blockdev;
+	char* fs;
+	gboolean do_encrypt;
+	gboolean do_partition_table;
+	int partition_number;
+	GHashTable* options;
+	GError* error;
+
 	FormatDialog* dialog = data;
 
 	/* Figure out the device params */
@@ -288,9 +310,36 @@ setup_volume_treeview (FormatDialog* dialog)
 static void
 setup_filesystem_menu(FormatDialog* dialog)
 {
-	/* Track down the menu we want to add subitems to */
-	GtkMenuItem* fs_menu_item =  GTK_MENU_ITEM(glade_xml_get_widget(dialog->xml, "menu_fs_list"));
-	GtkMenuShell* fs_menu = GTK_MENU_SHELL(gtk_menu_new());
+	GtkTreeStore* model;
+	model = gtk_tree_store_new(2, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN);
+	GtkComboBox* combo = dialog->fs_combo;
+
+	/* Set up the column */
+	gtk_cell_layout_pack_start( GTK_CELL_LAYOUT(combo), (text_renderer = gtk_cell_renderer_text_new()), TRUE );
+	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), text_renderer, "markup", FS_COLUMN_MARKUP );
+	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), text_renderer, "sensitive", FS_COLUMN_SENSITIVE );
+	gtk_combo_box_set_model(combo, GTK_TREE_MODEL(model));
+
+	/* Add the default items */
+	gtk_tree_store_insert_with_values(model, NULL, NULL, 100 /*Always at end*/,
+			FS_COLUMN_REALNAME, "friendly_vfat",
+			FS_COLUMN_MARKUP, _("For all computers"),
+			FS_COLUMN_SENSITIVE, TRUE, -1);
+
+	gtk_tree_store_insert_with_values(model, NULL, NULL, 100 /*Always at end*/,
+			FS_COLUMN_REALNAME, "friendly_ext2",
+			FS_COLUMN_MARKUP, _("For Linux computers"),
+			FS_COLUMN_SENSITIVE, TRUE, -1);
+
+	gtk_tree_store_insert_with_values(model, NULL, NULL, 100 /*Always at end*/,
+			FS_COLUMN_REALNAME, "friendly_hfsplus",
+			FS_COLUMN_MARKUP, _("For Apple computers"),
+			FS_COLUMN_SENSITIVE, TRUE, -1);
+
+	GtkTreeIter* parent = gtk_tree_store_insert_with_values(model, NULL, NULL, 100 /*Always at end*/,
+			FS_COLUMN_REALNAME, "specific_fs",
+			FS_COLUMN_MARKUP, _("Specific Filesystem"),
+			FS_COLUMN_SENSITIVE, TRUE, -1);
 
 	GSList* iter;
 	GHashTable* no_dups_list = g_hash_table_new(g_str_hash, g_str_equal);
@@ -308,12 +357,18 @@ setup_filesystem_menu(FormatDialog* dialog)
 			GtkWidget* new_menu = gtk_menu_item_new_with_label(current_fs);
 			gtk_widget_set_name(new_menu, current_fs);
 			gtk_menu_shell_append(fs_menu, new_menu);
+
+			/* FIXME: We should update the can_format list based on the device */
+			gtk_tree_store_insert_with_values(model, NULL, parent, 100 /*ditto*/,
+				FS_COLUMN_REALNAME, current_fs,
+				FS_COLUMN_MARKUP, current_fs,
+				FS_COLUMN_SENSITIVE, formatter_can_format(current, current_fs, NULL), -1);
+
 			g_hash_table_insert(no_dups_list, current_fs, current);
 		}
 	}
 
 	g_hash_table_destroy(no_dups_list);
-	gtk_menu_item_set_submenu(fs_menu_item, GTK_WIDGET(fs_menu));
 }
 
 
@@ -687,6 +742,7 @@ format_dialog_new(void)
 	dialog->toplevel = glade_xml_get_widget (dialog->xml, "toplevel");
 	dialog->volume_combo = GTK_COMBO_BOX(glade_xml_get_widget(dialog->xml, "volume_combo"));
 	dialog->show_partitions = GTK_TOGGLE_BUTTON(glade_xml_get_widget(dialog->xml, "show_partitions"));
+	dialog->fs_combo = GTK_COMBO_BOX(glade_xml_get_widget(dialog->xml, "fs_combo"));
 	dialog->extra_volume_info = GTK_LABEL(glade_xml_get_widget(dialog->xml, "extra_volume_info"));
 	dialog->extra_volume_hbox = GTK_HBOX(glade_xml_get_widget(dialog->xml, "extra_volume_hbox"));
 	dialog->progress_bar = GTK_PROGRESS_BAR(glade_xml_get_widget(dialog->xml, "progress_bar"));
