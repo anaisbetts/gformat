@@ -133,16 +133,34 @@ formatter_handle_error(gpointer data)
 	return FALSE;
 }
 
-static gpointer
-formatter_do_format_thread(gpointer data)
+static gboolean
+formatter_do_format(gpointer data)
 {
-	/* The responsibility of who frees this data is tricky:
-	 * Most of the data freed here, even though it was 
-	 * allocated by the function that created the thread. 
-	 * The exception to this is the struct itself and the GError.
-	 * If there was an error, the struct itself is freed by
-	 * formatter_handle_error, otherwise it's freed here */
-	fmt_thread_params* params = data;
+	FormatDialog* dialog = data;
+
+	/* Figure out the device params */
+	GtkTreeIter iter;
+	if(!gtk_combo_box_get_active_iter(dialog->volume_combo, &iter))
+		return;
+	FormatVolume* vol;
+	if( !(vol = get_cached_device_from_treeiter(dialog, &iter)) )
+		return;
+	params->fs = "ext2";		/* FIXME: Figure out how to snag the current menu item */
+
+	if(vol->volume) {
+		params->blockdev = g_strdup(libhal_volume_get_device_file(vol->volume));
+		params->partition_number = libhal_volume_get_partition_number(vol->volume);
+		params->vol = vol;
+	} else {
+		/* TODO: Figure out what to do if any other partition is mounted on this drive */
+
+		if(!(params->vol = write_partition_table(dialog, vol)))
+			goto error_out;
+		
+		params->blockdev = libhal_volume_get_device_file(params->vol);
+		params->partition_number = 1;
+	}
+
 	if(!formatter_do_format(params->dialog->formatter_list, 
 				params->blockdev,
 				params->fs,
@@ -153,6 +171,9 @@ formatter_do_format_thread(gpointer data)
 		params->error = (params->error ? params->error : g_error_new(0, -1, _("Unknown error")));
 	}
 
+	params->do_encrypt = FALSE;		/* FIXME: We have to figure this out */
+	params->do_partition_table = TRUE;
+
 	g_free(params->blockdev);
 	g_free(params->fs);
 
@@ -162,22 +183,17 @@ formatter_do_format_thread(gpointer data)
 		g_idle_add(formatter_handle_error, params);
 	}
 
-	return 0;
+	return FALSE;
 }
 
 static gboolean
 formatter_update_bar(gpointer data)
 {
 	FormatDialog* dialog = data;
-	if(!g_mutex_trylock(dialog->progress_lock)) {
-		/* Update the UI and try again */
-		return TRUE;
-	}
 
 	gtk_progress_bar_set_text(dialog->progress_bar, dialog->progress_text);
 	gtk_progress_bar_set_fraction(dialog->progress_bar, dialog->progress_value);
 
-	g_mutex_unlock(dialog->progress_lock);
 	return FALSE;
 }
 
@@ -186,9 +202,7 @@ formatter_set_text(Formatter* this, const gchar* text)
 {
 	FormatDialog* dialog = this->client_data;
 
-	g_mutex_lock(dialog->progress_lock);
 	strncpy(dialog->progress_text, text, 500);
-	g_mutex_unlock(dialog->progress_lock);
 	gtk_idle_add(formatter_update_bar, dialog);
 }
 
@@ -196,9 +210,7 @@ static void
 formatter_set_progress(Formatter* this, gdouble progress)
 {
 	FormatDialog* dialog = this->client_data;
-	g_mutex_lock(dialog->progress_lock);
 	dialog->progress_value = progress;
-	g_mutex_unlock(dialog->progress_lock);
 	gtk_idle_add(formatter_update_bar, dialog);
 }
 
@@ -630,50 +642,13 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 	return;
 
 	FormatDialog* dialog = g_object_get_data( G_OBJECT(gtk_widget_get_toplevel(w)), "userdata" );
-	fmt_thread_params* params = g_new0(fmt_thread_params, 1);
 	GError* err = NULL;
 
 	/* TODO: Make a "OMG THIS WILL TEH TRASH UR USB!" dialog box */
 
 	/* TODO: Figure out what to do if it's mounted */
 
-	/* Figure out the device params */
-	GtkTreeIter iter;
-	if(!gtk_combo_box_get_active_iter(dialog->volume_combo, &iter))
-		return;
-	FormatVolume* vol;
-	if( !(vol = get_cached_device_from_treeiter(dialog, &iter)) )
-		return;
-	params->fs = "ext2";		/* FIXME: Figure out how to snag the current menu item */
-
-	if(vol->volume) {
-		params->blockdev = g_strdup(libhal_volume_get_device_file(vol->volume));
-		params->partition_number = libhal_volume_get_partition_number(vol->volume);
-		params->vol = vol;
-	} else {
-		/* TODO: Figure out what to do if any other partition is mounted on this drive */
-
-		if(!(params->vol = write_partition_table(dialog, vol)))
-			goto error_out;
-		
-		params->blockdev = libhal_volume_get_device_file(params->vol);
-		params->partition_number = 1;
-	}
-
-	/* Load the params into a struct so we can async format the drive */
-	params->dialog = dialog;
-	params->options = NULL;
-	params->do_encrypt = FALSE;		/* FIXME: We have to figure this out */
-	params->do_partition_table = TRUE;
-
-	GThread* worker = g_thread_create(formatter_do_format_thread, params, TRUE, NULL);
-	if(!worker) 	goto error_out;
-	g_thread_join(worker);
-
-	return;
-
-error_out:
-	g_free(params);
+	g_idle_add(formatter_do_format, dialog);
 }
 
 /*

@@ -53,7 +53,6 @@ typedef struct _FormatDialog {
 	GSList* formatter_list;
 
 	/* Progress bar stuff */
-	GMutex* progress_lock;
 	gdouble progress_value;
 	char progress_text[512];
 	gboolean is_formatting;
