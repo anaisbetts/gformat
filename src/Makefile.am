@@ -17,9 +17,7 @@ glade_DATA = gformat.glade
 
 gnome_format_SOURCES = \
 	device-info.c \
-	formatterbase.c \
 	format-dialog.c \
-	fs-parted.c \
 	logger.c \
 	main.c \
 	partutil.c

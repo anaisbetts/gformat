@@ -35,7 +35,6 @@
 #include <gtk/gtk.h>
 
 #include "format-dialog.h"
-#include "fs-parted.h"
 
 /* Command-line stuff */
 static GOptionEntry entries[] = 

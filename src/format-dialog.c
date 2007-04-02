@@ -42,8 +42,6 @@
 
 #include "device-info.h"
 #include "format-dialog.h"
-#include "formatterbase.h"
-#include "fs-parted.h"
 
 enum {
 	DEV_COLUMN_UDI = 0,
@@ -207,35 +205,8 @@ formatter_execute(gpointer data)
 	} else {
 		g_idle_add(formatter_handle_error, params);
 	}
-
 #endif
 	return FALSE;
-}
-
-static gboolean
-formatter_update_bar(gpointer data)
-{
-	FormatDialog* dialog = data;
-
-	gtk_progress_bar_set_text(dialog->progress_bar, dialog->progress_text);
-	gtk_progress_bar_set_fraction(dialog->progress_bar, dialog->progress_value);
-
-	return FALSE;
-}
-
-static void
-formatter_set_text(FormatDialog* dialog, const gchar* text)
-{
-	strncpy(dialog->progress_text, text, 500);
-	gtk_idle_add(formatter_update_bar, dialog);
-}
-
-static void
-formatter_set_progress(Formatter* this, gdouble progress)
-{
-	FormatDialog* dialog = this->client_data;
-	dialog->progress_value = progress;
-	gtk_idle_add(formatter_update_bar, dialog);
 }
 
 static const FormatVolume* 
@@ -345,6 +316,8 @@ setup_filesystem_menu(FormatDialog* dialog)
 			FS_COLUMN_MARKUP, _("Specific Filesystem"),
 			FS_COLUMN_SENSITIVE, TRUE, -1);
 
+	#if 0
+	/* FIXME: This needs to be rewritified */
 	GSList* iter;
 	for(iter = dialog->formatter_list; iter != NULL; iter = g_slist_next(iter)) {
 		Formatter* current = iter->data;
@@ -371,23 +344,7 @@ setup_filesystem_menu(FormatDialog* dialog)
 			g_hash_table_insert(dlg->fs_map, current_fs, current);
 		}
 	}
-
-	g_hash_table_destroy(no_dups_list);
-}
-
-
-static void
-setup_formatter_backends(FormatDialog* dialog)
-{
-	/* Load the various backends that can format block devices */
-	Formatter* parted = parted_formatter_init();
-	if(parted)
-		dialog->formatter_list = g_slist_prepend(dialog->formatter_list, parted);
-
-	/* Set callbacks to various backend events */
-	FormatterClientOps fcops = { formatter_set_text, formatter_set_progress };
-	formatter_set_client_ops(dialog->formatter_list, fcops);
-	formatter_set_client_data(dialog->formatter_list, dialog);
+	#endif
 }
 
 static gboolean 
@@ -624,7 +581,6 @@ update_dialog(FormatDialog* dialog)
 	rebuild_volume_combo(dialog);
 	update_extra_info(dialog);
 	update_options_visibility(dialog);
-	formatter_update_bar(dialog);
 	update_sensitivity(dialog);
 }
 
@@ -768,7 +724,6 @@ format_dialog_new(void)
 
 	/* Set stuff in the dialog up */
 	setup_volume_treeview(dialog);	
-	setup_formatter_backends(dialog);
 	setup_filesystem_menu(dialog);
 
 	gtk_widget_show_all (dialog->toplevel);
