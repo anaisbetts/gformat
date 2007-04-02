@@ -75,7 +75,7 @@ struct _Formatter
 void formatter_set_client_ops(GSList* formatter_list, FormatterClientOps ops);
 void formatter_set_client_data(GSList* formatter_list, gpointer client_data);
 gboolean formatter_can_format(GSList* formatter_list, const char* fs, const char* blockdev);
-PartitionScheme formatter_table_hint(GSList* formatter_list, const char* fs, const char* blockdev);
+PartitionScheme formatter_table_hint (GSList* formatter_list, const char* blockdev, const char* fs);
 gboolean formatter_do_format(GSList* formatter_list, 
 			     const char* blockdev, 
 			     const char* fs, 

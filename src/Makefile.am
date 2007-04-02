@@ -4,6 +4,7 @@ INCLUDES = \
 	-DGNOMELOCALEDIR=\""$(gnomeutilslocaledir)"\"	\
         -DGLADEDIR=\""$(gladedir)"\"           	\
         -DDATADIR=\""$(datadir)"\"		\
+	-DUSE_PARTED 				\
 	-I. -Wall				\
 	$(GFORMAT_CFLAGS)			
 

@@ -92,7 +92,7 @@ formatter_can_format(GSList* formatter_list, const char* fs, const char* blockde
 }
 
 PartitionScheme 
-formatter_table_hint (Formatter* this, const char* blockdev, const char* fs)
+formatter_table_hint (GSList* formatter_list, const char* blockdev, const char* fs)
 {
 	GSList* iter = formatter_list;
 	for(iter = formatter_list; iter != NULL; iter = g_slist_next(iter)) {
@@ -104,8 +104,8 @@ formatter_table_hint (Formatter* this, const char* blockdev, const char* fs)
 		return (*table_hint)(current, fs, blockdev);
 	}
 
-	/* FIXME: This isn't exactly...right */
-	return (PartitionScheme)NULL;
+	/* It's a pretty good guess, anywayssss */
+	return PART_TYPE_MSDOS;
 }
 
 gboolean

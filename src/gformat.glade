@@ -549,7 +549,7 @@ For Mac OS X</property>
 		      </child>
 
 		      <child>
-			<widget class="GtkLabel" id="label29">
+			<widget class="GtkLabel" id="hal_warning">
 			  <property name="visible">True</property>
 			  <property name="label" translatable="yes">&lt;i&gt;Disk encryption is only compatible with recent versions of Linux. Make sure that all computers that will be used with this disk have HAL 0.5.8 or higher&lt;/i&gt;</property>
 			  <property name="use_underline">False</property>

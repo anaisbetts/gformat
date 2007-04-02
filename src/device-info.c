@@ -24,6 +24,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
 
 #include <libhal.h>
 #include <libhal-storage.h>
@@ -283,17 +286,6 @@ get_friendly_volume_info(LibHalContext* ctx, LibHalVolume* volume)
 	return ret;
 }
 
-
-/* from <linux/ioctl.h> */
-#define _IOC_NONE	0U
-#define _IOC_WRITE	1U
-#define _IOC_READ	2U
-#define _IOC(dir,type,nr,size) \
-	(((dir)  << _IOC_DIRSHIFT) | \
-	 ((type) << _IOC_TYPESHIFT) | \
-	 ((nr)   << _IOC_NRSHIFT) | \
-	 ((size) << _IOC_SIZESHIFT))
-
 /* from <linux/fs.h> */
 #define _IO(type,nr)		_IOC(_IOC_NONE,(type),(nr),0)
 #define BLKRRPART  _IO(0x12,95) /* re-read partition table */
@@ -304,13 +296,13 @@ repoll_partition_table_linux(const char* dev)
 	int fd = open(dev, O_RDWR);
 	int retry_count = 5;
 	if(fd < 1)	return FALSE;
-sync();
-        while (ioctl (fd, BLKRRPART)) {
-                retry_count--;
-                sync();
-                if (!retry_count)
+	sync();
+	while (ioctl (fd, BLKRRPART)) {
+		retry_count--;
+		sync();
+		if (!retry_count)
 			goto out;
-        }
+	}
 
 	/* Wait awhile for the kernel to repoll */
 	sleep(1);
@@ -331,6 +323,7 @@ repoll_partition_table(const char* dev)
 gboolean
 write_partition_table_for_device(LibHalDrive* drive, PartitionScheme scheme, GError** error)
 {
+	char* name;
 	const char* msg;
 	g_assert(drive);
 
@@ -384,7 +377,7 @@ write_partition_table_for_device(LibHalDrive* drive, PartitionScheme scheme, GEr
 	return TRUE;
 
 error_out:
-	char* name = get_friendly_drive_name(drive);
+	name = get_friendly_drive_name(drive);
 	g_set_error(error, 0, 0, _("Cannot create partition table on %s"), name);
 	g_free(name);
 	return FALSE;

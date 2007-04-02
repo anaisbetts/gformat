@@ -119,7 +119,9 @@ static gboolean
 luks_valid_for_device (const FormatVolume* dev)
 {
 	/* AFAIK, you can format LUKS on anything that is above a certain size */
+	/* FIXME: Add in the check for HAL as well */
 	g_assert(dev != NULL);
+
 	return (get_format_volume_size(dev) >= LUKS_BLKDEV_MIN_SIZE);
 }
 
@@ -146,8 +148,9 @@ formatter_handle_error(gpointer data)
 }
 
 static gboolean
-formatter_do_format(gpointer data)
+formatter_execute(gpointer data)
 {
+#if 0
 	FormatDialog* dialog = data;
 	FormatVolume* vol;
 	char* blockdev;
@@ -183,7 +186,7 @@ formatter_do_format(gpointer data)
 		params->partition_number = 1;
 	}
 
-	if(!formatter_do_format(params->dialog->formatter_list, 
+	if(!formatter_execute(params->dialog->formatter_list, 
 				params->blockdev,
 				params->fs,
 				params->partition_number,
@@ -205,6 +208,7 @@ formatter_do_format(gpointer data)
 		g_idle_add(formatter_handle_error, params);
 	}
 
+#endif
 	return FALSE;
 }
 
@@ -220,10 +224,8 @@ formatter_update_bar(gpointer data)
 }
 
 static void
-formatter_set_text(Formatter* this, const gchar* text)
+formatter_set_text(FormatDialog* dialog, const gchar* text)
 {
-	FormatDialog* dialog = this->client_data;
-
 	strncpy(dialog->progress_text, text, 500);
 	gtk_idle_add(formatter_update_bar, dialog);
 }
@@ -313,6 +315,7 @@ setup_filesystem_menu(FormatDialog* dialog)
 	GtkTreeStore* model;
 	model = gtk_tree_store_new(2, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN);
 	GtkComboBox* combo = dialog->fs_combo;
+	GtkCellRenderer* text_renderer;
 
 	/* Set up the column */
 	gtk_cell_layout_pack_start( GTK_CELL_LAYOUT(combo), (text_renderer = gtk_cell_renderer_text_new()), TRUE );
@@ -336,13 +339,13 @@ setup_filesystem_menu(FormatDialog* dialog)
 			FS_COLUMN_MARKUP, _("For Apple computers"),
 			FS_COLUMN_SENSITIVE, TRUE, -1);
 
-	GtkTreeIter* parent = gtk_tree_store_insert_with_values(model, NULL, NULL, 100 /*Always at end*/,
+	GtkTreeIter parent = {0, NULL}; 
+	gtk_tree_store_insert_with_values(model, &parent, NULL, 100 /*Always at end*/,
 			FS_COLUMN_REALNAME, "specific_fs",
 			FS_COLUMN_MARKUP, _("Specific Filesystem"),
 			FS_COLUMN_SENSITIVE, TRUE, -1);
 
 	GSList* iter;
-	GHashTable* no_dups_list = g_hash_table_new(g_str_hash, g_str_equal);
 	for(iter = dialog->formatter_list; iter != NULL; iter = g_slist_next(iter)) {
 		Formatter* current = iter->data;
 	
@@ -351,20 +354,21 @@ setup_filesystem_menu(FormatDialog* dialog)
 		int i;
 		for(i = 0; current->available_fs_list[i] != NULL; i++) {
 			const char* current_fs = current->available_fs_list[i];
-			if( g_hash_table_lookup(no_dups_list, current_fs) )
+			if( g_hash_table_lookup(dlg->fs_map, current_fs) )
 				continue;
 
+			/*
 			GtkWidget* new_menu = gtk_menu_item_new_with_label(current_fs);
 			gtk_widget_set_name(new_menu, current_fs);
 			gtk_menu_shell_append(fs_menu, new_menu);
+			*/
 
-			/* FIXME: We should update the can_format list based on the device */
-			gtk_tree_store_insert_with_values(model, NULL, parent, 100 /*ditto*/,
+			gtk_tree_store_insert_with_values(model, NULL, &parent, 100 /*ditto*/,
 				FS_COLUMN_REALNAME, current_fs,
 				FS_COLUMN_MARKUP, current_fs,
-				FS_COLUMN_SENSITIVE, formatter_can_format(current, current_fs, NULL), -1);
+				FS_COLUMN_SENSITIVE, FALSE, -1); /* We update this later */
 
-			g_hash_table_insert(no_dups_list, current_fs, current);
+			g_hash_table_insert(dlg->fs_map, current_fs, current);
 		}
 	}
 
@@ -423,15 +427,15 @@ update_device_lists(FormatDialog* dialog)
 }
 
 static FormatVolume*
-write_partition_table(FormatDialog* dialog, FormatVolume* drive)
+write_partition_table(FormatDialog* dialog, FormatVolume* vol, const char* fs)
 {
 	FormatVolume* ret = NULL;
 	char* drive_udi = g_strdup(libhal_drive_get_udi(vol->drive));
 
 	/* Write out a new table */
+	GError* err = NULL;
 	const char* dev = libhal_drive_get_device_file(vol->drive);
-	if(!write_partition_table_for_device(vol->drive, formatter_get_table_hint(vol->drive, dev, params->fs), 
-				&err)) {
+	if(!write_partition_table_for_device(vol->drive, formatter_table_hint(vol->drive, dev, fs), &err)) {
 		show_error_dialog(dialog->toplevel, _("Error formatting disk"), err->message);
 		g_error_free(err);
 		goto out;
@@ -526,6 +530,11 @@ rebuild_volume_combo(FormatDialog* dialog)
 				DEV_COLUMN_NAME_MARKUP, _("<i>No devices found</i>"), 
 				DEV_COLUMN_SENSITIVE, FALSE, -1);
 	}
+}
+
+static void
+update_fs_sensitivity(FormatDialog* dialog, GtkTreeIter* level)
+{
 }
 
 static void
@@ -703,7 +712,7 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 
 	/* TODO: Figure out what to do if it's mounted */
 
-	g_idle_add(formatter_do_format, dialog);
+	g_idle_add(formatter_execute, dialog);
 }
 
 /*
@@ -715,7 +724,6 @@ format_dialog_new(void)
 {
 	FormatDialog *dialog;
 	dialog = g_new0 (FormatDialog, 1);
-	dialog->progress_lock = g_mutex_new();
 	const char* xmlpath = GLADEDIR "/gformat.glade";
         
 	dialog->xml = glade_xml_new (xmlpath, "toplevel", NULL);
@@ -813,6 +821,5 @@ void format_dialog_free(FormatDialog* obj)
 	g_object_unref(obj->toplevel);
 	g_object_unref(obj->xml);
 
-	g_mutex_free(obj->progress_lock);
 	g_free(obj);
 }

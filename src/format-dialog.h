@@ -39,20 +39,20 @@ typedef struct _FormatDialog {
 	GtkComboBox* volume_combo;
 	GtkToggleButton* show_partitions;
 	GHashTable* icon_cache;
-	GtkComboBox* fs_combo;
-	GtkTreeStore* fs_model;
 	GtkLabel* extra_volume_info;
 	GtkHBox* extra_volume_hbox;
 	GtkButton* format_button;
 	GtkProgressBar* progress_bar;
 
+	/* Stuff for filesystem list */
+	GtkComboBox* fs_combo;
+	GtkTreeStore* fs_model;
+	GHashTable* fs_map; 		/* This maps fs names ("ext3") to its Formatter */
+
 	/* HAL info */
 	LibHalContext* hal_context;
 	GSList* hal_drive_list;		/* List of FormatVolume ptrs */
 	GSList* hal_volume_list; 	/* this too */
-
-	/* Formatting backends list */
-	GSList* formatter_list;
 
 	/* Progress bar stuff */
 	gdouble progress_value;
