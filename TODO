@@ -1,15 +1,22 @@
-* Add support for other file system types, when they are available,
-  such as Minix when mkfs.minix is available and executable.
+For 2.20:
+	* Finish formatting backend, write test app
 
-* FAT32 support for DOS bootdisks (nobody wants truncated file names
-  on their floppies).
+	* Write scripts to handle various filesystems
 
-* Perhaps some kind of su ability, so regular users can format without
-  playing with the permissions of /dev/fd0.
+	* Fix GTK errors and clean up filesystem type dialog
 
-* Configurable devices to format (currently hard coded to /dev/fd0).
+	* Fix HAL problems regarding automatically updating device dialog
 
-* Perhaps a toggle option for "System" or "Bootable" disk?  I'm not
-  sure I even know how to make a floppy that I can boot to off the top
-  of my head, a regular user/former windows user might like something
-  like this.
+	* Permissions? Either gksu or punt on this one and let distros handle
+	  it.
+
+	* Write floppy formatting support, most likely code taken directly from
+	  GFloppy
+	
+Future:
+	* Add support for other file system types, when they are available
+
+	* Use HAL to do formatting instead of spawning out processes - this is
+	  the real way to solve permissions issues but until HAL decides to do
+	  this we can't do much other than harass them
+
