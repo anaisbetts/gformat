@@ -145,70 +145,6 @@ formatter_handle_error(gpointer data)
 	return FALSE;
 }
 
-static gboolean
-formatter_execute(gpointer data)
-{
-#if 0
-	FormatDialog* dialog = data;
-	FormatVolume* vol;
-	char* blockdev;
-	char* fs;
-	gboolean do_encrypt;
-	gboolean do_partition_table;
-	int partition_number;
-	GHashTable* options;
-	GError* error;
-
-	FormatDialog* dialog = data;
-
-	/* Figure out the device params */
-	GtkTreeIter iter;
-	if(!gtk_combo_box_get_active_iter(dialog->volume_combo, &iter))
-		return;
-	FormatVolume* vol;
-	if( !(vol = get_cached_device_from_treeiter(dialog, &iter)) )
-		return;
-	params->fs = "ext2";		/* FIXME: Figure out how to snag the current menu item */
-
-	if(vol->volume) {
-		params->blockdev = g_strdup(libhal_volume_get_device_file(vol->volume));
-		params->partition_number = libhal_volume_get_partition_number(vol->volume);
-		params->vol = vol;
-	} else {
-		/* TODO: Figure out what to do if any other partition is mounted on this drive */
-
-		if(!(params->vol = write_partition_table(dialog, vol)))
-			goto error_out;
-		
-		params->blockdev = libhal_volume_get_device_file(params->vol);
-		params->partition_number = 1;
-	}
-
-	if(!formatter_execute(params->dialog->formatter_list, 
-				params->blockdev,
-				params->fs,
-				params->partition_number,
-				params->options,
-				&params->error)) {
-		/* Always make sure there is an error on failure */
-		params->error = (params->error ? params->error : g_error_new(0, -1, _("Unknown error")));
-	}
-
-	params->do_encrypt = FALSE;		/* FIXME: We have to figure this out */
-	params->do_partition_table = TRUE;
-
-	g_free(params->blockdev);
-	g_free(params->fs);
-
-	if(!params->error) {
-		g_free(params);
-	} else {
-		g_idle_add(formatter_handle_error, params);
-	}
-#endif
-	return FALSE;
-}
-
 static const FormatVolume* 
 get_cached_device_from_udi(FormatDialog* dialog, const char* udi)
 {
@@ -668,7 +604,60 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 
 	/* TODO: Figure out what to do if it's mounted */
 
-	g_idle_add(formatter_execute, dialog);
+	/* XXX: The code here is completely cracked out, it's only here because
+	 * I need to rewrite it */
+	FormatVolume* vol;
+	char* blockdev;
+	char* fs;
+	gboolean do_encrypt;
+	gboolean do_partition_table;
+	int partition_number;
+	GHashTable* options;
+	GError* error;
+
+	/* Figure out the device params */
+	GtkTreeIter iter;
+	if(!gtk_combo_box_get_active_iter(dialog->volume_combo, &iter))
+		return;
+	if( !(vol = get_cached_device_from_treeiter(dialog, &iter)) )
+		return;
+	fs = "ext2";		/* FIXME: Figure out how to snag the current menu item */
+
+	if(vol->volume) {
+		blockdev = g_strdup(libhal_volume_get_device_file(vol->volume));
+		partition_number = libhal_volume_get_partition_number(vol->volume);
+		vol = vol;
+	} else {
+		/* TODO: Figure out what to do if any other partition is mounted on this drive */
+
+		if(!(vol = write_partition_table(dialog, vol, fs)))
+			goto error_out;
+		
+		blockdev = libhal_volume_get_device_file(vol);
+		partition_number = 1;
+	}
+
+#if 0
+	if(!formatter_execute(dialog->formatter_list, 
+				blockdev,
+				fs,
+				partition_number,
+				options,
+				&error)) {
+		/* Always make sure there is an error on failure */
+		error = (error ? error : g_error_new(0, -1, _("Unknown error")));
+	}
+#endif
+
+	do_encrypt = FALSE;		/* FIXME: We have to figure this out */
+	do_partition_table = TRUE;
+
+error_out:
+	g_free(blockdev);
+	g_free(fs);
+
+	return FALSE;
+
 }
 
 /*

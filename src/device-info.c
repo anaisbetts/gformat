@@ -165,7 +165,7 @@ get_format_volume_size(const FormatVolume* vol)
 	return 0;
 }
 
-char*
+gchar*
 get_friendly_drive_name(LibHalDrive* drive)
 {
 	const char* ret;
@@ -213,7 +213,7 @@ get_friendly_drive_info(LibHalDrive* drive)
 	return ret;
 }
 
-char*
+gchar*
 get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume)
 {
 	char* ret, *tmp;
@@ -351,7 +351,7 @@ write_partition_table_for_device(LibHalDrive* drive, PartitionScheme scheme, GEr
 	const char* type;
 	switch(scheme) {
 	case PART_TYPE_GPT:
-		type = "{}"; /* FIXME: Some lame GUID */
+		type = "{EBD0A0A2-B9E5-4433-87C0-68B6B72699C7}"; /* Linux Data */
 		break;
 	case PART_TYPE_APPLE:
 		type = "DOS_FAT_32";
@@ -381,6 +381,33 @@ error_out:
 	g_set_error(error, 0, 0, _("Cannot create partition table on %s"), name);
 	g_free(name);
 	return FALSE;
+}
+
+GSList* 
+get_volumes_mounted_on_drive(LibHalContext* ctx, LibHalDrive* drive)
+{
+	GSList* volume_list = NULL;
+	int num_vols = 0;
+
+	char** vol_udis = libhal_drive_find_all_volumes(ctx, drive, &num_vols);
+	if(num_vols <= 0 || vol_udis == NULL)
+		goto out;
+
+	int i=0;
+	for(i=0; i < num_vols; i++) {
+		LibHalVolume* current;
+		if(!vol_udis[i]) 	break;
+		current = libhal_volume_from_udi(ctx, vol_udis[i]);
+		if(!current) 	continue;
+
+		if(libhal_volume_is_mounted(current)) 
+			volume_list = g_slist_prepend(volume_list, get_friendly_volume_name(ctx, current));
+		libhal_volume_free(current);
+	}
+	libhal_free_string_array(vol_udis);
+
+out:
+	return volume_list;
 }
 
 GSList* 

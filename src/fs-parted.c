@@ -34,16 +34,6 @@
 #include "formatterbase.h"
 #include "fs-parted.h"
 
-#if 0
-/* TODO: We should do a more thorough check to see if we really can
- * format this device using this filesystem
- */
-static gboolean 
-parted_formatter_canformat(Formatter* this, const char* blockdev, const char* fs)
-{
-}
-#endif
-
 #define error_wrap(exp, err)  do { parted_clear_lasterr(); \
 				   (exp); \
 				   if(err && parted_get_lasterr()) \
