@@ -186,6 +186,76 @@ get_cached_device_from_treeiter(FormatDialog* dialog, GtkTreeIter* iter)
 	g_free(udi);	return ret;
 }
 
+gboolean
+warn_user_of_impending_doom(FormatDialog* dialog, FormatVolume* target)
+{
+	GSList* mounted_list = NULL;
+
+	/* Figure out if we're about to run over any live partitions first */
+	if(target->volume) {
+		if(libhal_volume_is_mounted(target->volume)) {
+			mounted_list = g_slist_prepend(mounted_list, 
+						       get_friendly_volume_name(dialog->hal_context, target->volume));
+		}
+	}
+	else {
+		mounted_list = get_volumes_mounted_on_drive(dialog->hal_context, target->drive);
+	}
+
+	gchar* message;
+	gchar* name = (target->volume ? get_friendly_volume_name(dialog->hal_context, target->volume) : 
+					get_friendly_drive_name(target->drive));
+	/* Come up with the error message */
+	if(!mounted_list) {
+		message = g_strdup_printf(_("Formatting will irreversibly destroy all data on %s. "
+					    "Are you sure you want to continue?"), name);
+	}
+	else {
+		/* FIXME: There are a ton of malloc's here */
+		int i; 	GSList* iter;
+		gchar* tmp_list[65];
+
+		/* TODO: It'd be cool if these were hyperlinks that opened nautilus at the mountpoint! */
+		for(iter = mounted_list, i=0; iter != NULL && i < 64; iter = iter->next, i++) {
+			FormatVolume* current = get_cached_device_from_udi(dialog, (char*)iter->data);
+			g_debug("Mounted: %s", iter->data);
+			if(!current) 	continue;
+
+			gchar* mountpoint = libhal_volume_get_mount_point(current->volume);
+			tmp_list[i] = g_strdup_printf( _("%s mounted at %s"), current->friendly_name, mountpoint);
+		}
+		tmp_list[i] = NULL;
+
+		gchar* vol_list = g_strjoinv("\n", tmp_list);
+
+		message = g_strdup_printf( _("Formatting will irreversibly destroy all data on %s, "
+					     "including these volumes currently in use:"
+					     "\n\n%s\n\n"
+					     "Are you sure you want to continue?"), name, vol_list);
+
+		/* Free our stuff */
+		g_free(vol_list);
+		for(int i=0; i < 64; i++) {
+			if(!tmp_list[i]) break;
+			g_free(tmp_list[i]);
+		}
+	}
+	g_free(name);
+
+	/* Show the dialog and get the response back */
+	GtkWidget* messagebox;
+	messagebox = gtk_message_dialog_new(GTK_WINDOW(dialog->toplevel), GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+			GTK_MESSAGE_WARNING, GTK_BUTTONS_NONE, _("Formatting will erase data"));
+	gtk_message_dialog_format_secondary_markup(GTK_MESSAGE_DIALOG(messagebox), message);
+	gtk_dialog_add_buttons(GTK_DIALOG(messagebox), GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, 
+			 _("Format device"), GTK_RESPONSE_OK, NULL);
+
+	int id = gtk_dialog_run(GTK_DIALOG(messagebox));
+	gtk_widget_destroy(messagebox);
+
+	return (id == GTK_RESPONSE_OK);
+}
+
 
 /*
  * High-level functions (aka 'big' functions)
@@ -594,15 +664,9 @@ void on_libhal_prop_modified (LibHalContext *ctx,
 void
 on_format_button_clicked(GtkWidget* w, gpointer user_data)
 {
-	/* FIXME: Stop from entering function that isn't finished yet */
-	return;
 
 	FormatDialog* dialog = g_object_get_data( G_OBJECT(gtk_widget_get_toplevel(w)), "userdata" );
 	GError* err = NULL;
-
-	/* TODO: Make a "OMG THIS WILL TEH TRASH UR USB!" dialog box */
-
-	/* TODO: Figure out what to do if it's mounted */
 
 	/* XXX: The code here is completely cracked out, it's only here because
 	 * I need to rewrite it */
@@ -623,6 +687,15 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 		return;
 	fs = "ext2";		/* FIXME: Figure out how to snag the current menu item */
 
+
+	if(!warn_user_of_impending_doom(dialog, vol)) {
+		g_debug("User cancelled format!");
+		return;
+	}
+
+	/* FIXME: Stop from entering function that isn't finished yet */
+	return;
+
 	if(vol->volume) {
 		blockdev = g_strdup(libhal_volume_get_device_file(vol->volume));
 		partition_number = libhal_volume_get_partition_number(vol->volume);
@@ -633,7 +706,7 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 		if(!(vol = write_partition_table(dialog, vol, fs)))
 			goto error_out;
 		
-		blockdev = libhal_volume_get_device_file(vol);
+		blockdev = libhal_volume_get_device_file(vol->volume);
 		partition_number = 1;
 	}
 
@@ -656,8 +729,7 @@ error_out:
 	g_free(blockdev);
 	g_free(fs);
 
-	return FALSE;
-
+	return;
 }
 
 /*

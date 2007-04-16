@@ -63,13 +63,14 @@ void format_volume_free(FormatVolume* volume);
 void format_volume_list_free(GSList* volume_list);
 
 guint64 get_format_volume_size(const FormatVolume* vol);
-gchar* get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume);
+gchar* get_friendly_drive_name(LibHalDrive* drive);
 gchar* get_friendly_drive_info(LibHalDrive* drive);
 gchar* get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume);
 gchar* get_friendly_volume_info(LibHalContext* ctx, LibHalVolume* volume);
 
 GHashTable* create_icon_cache(void);
 gboolean write_partition_table_for_device(LibHalDrive* drive, PartitionScheme scheme, GError** error);
+GSList* get_volumes_mounted_on_drive(LibHalContext* ctx, LibHalDrive* drive);
 GSList* build_volume_list(LibHalContext* ctx, 
 		  enum FormatVolumeType type, 
 		  GHashTable* icon_cache, 

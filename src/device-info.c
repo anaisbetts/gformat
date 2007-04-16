@@ -386,6 +386,8 @@ error_out:
 GSList* 
 get_volumes_mounted_on_drive(LibHalContext* ctx, LibHalDrive* drive)
 {
+	/* FIXME: This sucks - HAL doesn't report mounted volumes correctly */
+
 	GSList* volume_list = NULL;
 	int num_vols = 0;
 
@@ -401,7 +403,7 @@ get_volumes_mounted_on_drive(LibHalContext* ctx, LibHalDrive* drive)
 		if(!current) 	continue;
 
 		if(libhal_volume_is_mounted(current)) 
-			volume_list = g_slist_prepend(volume_list, get_friendly_volume_name(ctx, current));
+			volume_list = g_slist_prepend(volume_list, g_strdup(vol_udis[i]));
 		libhal_volume_free(current);
 	}
 	libhal_free_string_array(vol_udis);
