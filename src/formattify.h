@@ -28,6 +28,7 @@
 
 typedef struct _GProcessOutput
 {
+	GSourceFunc callback;
 	gchar* stdout_output;
 	gchar* stderr_output;
 	int ret;

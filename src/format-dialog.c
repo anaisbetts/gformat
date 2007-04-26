@@ -41,6 +41,7 @@
 #include <libhal-storage.h>
 
 #include "device-info.h"
+#include "formattify.h"
 #include "format-dialog.h"
 
 enum {
@@ -664,7 +665,6 @@ void on_libhal_prop_modified (LibHalContext *ctx,
 void
 on_format_button_clicked(GtkWidget* w, gpointer user_data)
 {
-
 	FormatDialog* dialog = g_object_get_data( G_OBJECT(gtk_widget_get_toplevel(w)), "userdata" );
 	GError* err = NULL;
 
@@ -687,14 +687,10 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 		return;
 	fs = "ext2";		/* FIXME: Figure out how to snag the current menu item */
 
-
 	if(!warn_user_of_impending_doom(dialog, vol)) {
 		g_debug("User cancelled format!");
 		return;
 	}
-
-	/* FIXME: Stop from entering function that isn't finished yet */
-	return;
 
 	if(vol->volume) {
 		blockdev = g_strdup(libhal_volume_get_device_file(vol->volume));

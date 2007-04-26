@@ -16,20 +16,21 @@ gladedir = $(pkgdatadir)/glade
 glade_DATA = gformat.glade
 
 gnome_format_SOURCES = \
-	device-info.c \
-	format-dialog.c \
-	logger.c \
-	main.c \
+	device-info.c 		\
+	format-dialog.c 	\
+	formattify.c 		\
+	logger.c 		\
+	main.c 			\
 	partutil.c
 
 THEHEADERS = 
 
 noinst_HEADERS = \
-	format-dialog.h 	\
-	fs-parted.h 		\
-	partutil.h 		\
 	device-info.h 		\
-	logger.h
+	formattify.h 		\
+	format-dialog.h 	\
+	logger.h 		\
+	partutil.h
 
 gnome_format_LDADD = $(GFORMAT_LIBS) 
 
