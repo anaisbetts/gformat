@@ -1,5 +1,7 @@
 For 2.20:
-	* Finish formatting backend, write test app
+	* Finish formatting backend
+		- Just format a partition
+		- Rewrite table and format
 
 	* Write scripts to handle various filesystems
 
