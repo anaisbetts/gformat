@@ -1,0 +1,16 @@
+#!/bin/sh
+
+case "$1" in
+	"--capabilities")
+	for d in `echo $PATH | sed 's/:/\n/g'`; do
+		for p in `ls "$d"/mkfs.* 2>/dev/null`; do
+			echo `echo $p | sed 's/^.*\.//g'`
+			echo "$p"
+		done
+	done
+	exit 0
+	;;
+esac
+
+# Just shell out the real mkfs
+exec `which mkfs` $@

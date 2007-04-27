@@ -57,6 +57,7 @@ enum {
 	FS_COLUMN_SENSITIVE,
 };
 
+#define LUKS_HAL_MIN_VERSION 	581 		/* 0.5.8.1 */
 #define LUKS_BLKDEV_MIN_SIZE 	(1048576 << 4) 	/* At least 16M */
 
 
@@ -97,7 +98,7 @@ get_fs_from_menuitem_name(const gchar* menuitem_name)
 static const gchar*
 get_fs_from_menu(FormatDialog* dialog)
 {
-
+	return "ext2";		/* FIXME: Figure out how to snag the current menu item */
 }
 
 gchar*
@@ -112,6 +113,46 @@ get_udi_from_iter(FormatDialog* dialog, GtkTreeIter* iter)
 	ret = g_strdup(g_value_get_string(&val));
 	g_value_unset(&val);
 	return ret;
+}
+
+static gboolean
+hal_cb(gpointer data)
+{
+	gint hal_version = 0;
+	gchar** split = NULL;
+	g_assert(data != NULL);
+
+	ProcessOutput* output = data;
+	FormatDialog* dialog = output->user_data;
+	g_assert(dialog != NULL);
+	if(!output->stdout_output)
+		goto out;
+
+	split = g_strsplit_set(output->stderr_output, " .", 0 /*All tokens*/);
+
+	if(!split || !split[0])
+		goto out;
+
+	/* FIXME: Make this check more thorough */
+	if(!split[3] || !split[4] || !split[5] || !split[6])
+		goto out;
+	hal_version = atoi(split[3])*1000 + atoi(split[4])*100 + atoi(split[5])*10 + atoi(split[6]);
+	
+out:
+	if(split)
+		g_strfreev(split);
+	process_output_free(output);
+	dialog->hal_version = hal_version;
+	return FALSE;
+}
+
+void
+get_hal_version(FormatDialog* dialog)
+{
+	/* FIXME: This is hardcoded. This is bad. */
+	const char* cmd[] = {"/usr/sbin/hald", "--version"};
+	if(!spawn_async_get_output(cmd, hal_cb, dialog))
+		dialog->hal_version = 0;
 }
 
 static gboolean
@@ -668,6 +709,8 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 	FormatDialog* dialog = g_object_get_data( G_OBJECT(gtk_widget_get_toplevel(w)), "userdata" );
 	GError* err = NULL;
 
+	g_debug("Hal version: %d", dialog->hal_version);
+
 	/* XXX: The code here is completely cracked out, it's only here because
 	 * I need to rewrite it */
 	FormatVolume* vol;
@@ -685,12 +728,15 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 		return;
 	if( !(vol = get_cached_device_from_treeiter(dialog, &iter)) )
 		return;
-	fs = "ext2";		/* FIXME: Figure out how to snag the current menu item */
+	fs = get_fs_from_menu(dialog);
 
 	if(!warn_user_of_impending_doom(dialog, vol)) {
 		g_debug("User cancelled format!");
 		return;
 	}
+
+	/* FIXME: Stop us from going into unfinished function */
+	return;
 
 	if(vol->volume) {
 		blockdev = g_strdup(libhal_volume_get_device_file(vol->volume));
@@ -698,7 +744,6 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 		vol = vol;
 	} else {
 		/* TODO: Figure out what to do if any other partition is mounted on this drive */
-
 		if(!(vol = write_partition_table(dialog, vol, fs)))
 			goto error_out;
 		
@@ -727,6 +772,7 @@ error_out:
 
 	return;
 }
+
 
 /*
  * Public functions
@@ -760,6 +806,7 @@ format_dialog_new(void)
 		exit (1);
 	} 
 
+	/* Grab some widgets */
 	dialog->toplevel = glade_xml_get_widget (dialog->xml, "toplevel");
 	dialog->volume_combo = GTK_COMBO_BOX(glade_xml_get_widget(dialog->xml, "volume_combo"));
 	dialog->show_partitions = GTK_TOGGLE_BUTTON(glade_xml_get_widget(dialog->xml, "show_partitions"));
@@ -768,10 +815,9 @@ format_dialog_new(void)
 	dialog->extra_volume_hbox = GTK_HBOX(glade_xml_get_widget(dialog->xml, "extra_volume_hbox"));
 	dialog->progress_bar = GTK_PROGRESS_BAR(glade_xml_get_widget(dialog->xml, "progress_bar"));
 	dialog->format_button = GTK_BUTTON(glade_xml_get_widget(dialog->xml, "format_button"));
-	g_assert(dialog->toplevel != NULL);
-
 	dialog->luks_subwindow = GTK_BOX(glade_xml_get_widget (dialog->xml, "luks_subwindow"));
 	dialog->floppy_subwindow = GTK_BOX(glade_xml_get_widget (dialog->xml, "floppy_subwindow"));
+	g_assert(dialog->toplevel != NULL);
 
 	/* Get a HAL context; if we can't, bail */
 	dialog->hal_context = libhal_context_alloc();
@@ -782,6 +828,7 @@ format_dialog_new(void)
 	/* Set stuff in the dialog up */
 	setup_volume_treeview(dialog);	
 	setup_filesystem_menu(dialog);
+	dialog->fs_map = build_supported_fs_list();
 
 	gtk_widget_show_all (dialog->toplevel);
 	update_dialog(dialog);
@@ -794,7 +841,8 @@ format_dialog_new(void)
 		return NULL;
 	}
 
-	/* Register the HAL device callbacks */
+	/* Get the HAL version and register the HAL device callbacks */
+	get_hal_version(dialog);
 	g_debug("Registering callback!");
 	libhal_ctx_set_user_data(dialog->hal_context, dialog);
 	if (libhal_ctx_set_device_added(dialog->hal_context, on_libhal_device_added_removed) == TRUE)

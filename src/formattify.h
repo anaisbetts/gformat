@@ -26,15 +26,17 @@
 #ifndef _FORMATTIFY_H
 #define _FORMATTIFY_H
 
-typedef struct _GProcessOutput
+typedef struct _ProcessOutput
 {
 	GSourceFunc callback;
 	gchar* stdout_output;
 	gchar* stderr_output;
 	int ret;
 	gpointer user_data;
-} GProcessOutput;
+} ProcessOutput;
 
 gboolean spawn_async_get_output(gchar** argv, GSourceFunc callback, gpointer user_data);
+void process_output_free(ProcessOutput* obj);
+GHashTable* build_supported_fs_list(void);
 
 #endif

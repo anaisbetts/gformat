@@ -23,6 +23,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 #include <stdio.h>
 #include <string.h>
 
@@ -33,6 +38,11 @@
 
 #include "device-info.h"
 #include "formattify.h"
+
+/* TODO: Put this into configure.in */
+#ifndef FORMAT_SCRIPT_DIR
+#define FORMAT_SCRIPT_DIR "./scripts"
+#endif
 
 struct _spawn_cb_pack {
 	GFunc real_cb;
@@ -45,7 +55,7 @@ static void
 spawn_cb(GPid pid, gint status, gpointer data)
 {
 	struct _spawn_cb_pack* s = data;
-	GProcessOutput* cb_data = g_new0(GProcessOutput, 1);
+	ProcessOutput* cb_data = g_new0(ProcessOutput, 1);
 	gsize dontcare;
 
 	/* Pull the data out of the pipes, then pack it in our return data
@@ -85,4 +95,82 @@ spawn_async_get_output(gchar** argv, GSourceFunc callback, gpointer user_data)
 
 	g_child_watch_add(pid, spawn_cb, packed_data);
 	return TRUE;
+}
+
+void 
+process_output_free(ProcessOutput* obj)
+{
+	g_assert(obj != NULL);
+	if(obj->stderr_output)
+		g_free(obj->stderr_output);
+	if(obj->stdout_output)
+		g_free(obj->stdout_output);
+	g_free(obj);
+}
+
+
+static gboolean
+add_cb(gpointer data)
+{
+	g_assert(data != NULL);
+
+	ProcessOutput* output = data;
+	GHashTable* table = output->user_data;
+
+	if(!output->stdout_output)
+		goto out;
+
+	/* Parse a list of supported filesystems in the format:
+	 *
+	 * ext2
+	 * /usr/sbin/mkfs.ext2
+	 * reiserfs
+	 * /usr/sbin/reiserfscreate
+	 * etc... 
+	 */
+	gchar** split = g_strsplit(output->stdout_output, "\n", 0/*all tokens*/);
+	gchar** iter = split;
+	while(iter && iter[1]) {
+		g_debug("Adding %s, %s", iter[0], iter[1]);
+		g_hash_table_insert(table, g_strdup(iter[0]), g_strdup(iter[1]));
+		iter += 2;
+	}
+	
+out:
+	return FALSE;
+}
+
+static gboolean
+add_supported_fs(const char* script_path, GHashTable* hash)
+{
+	const char* cmd[] = {"", "--capabilities"};
+	cmd[0] = script_path;
+	return spawn_async_get_output(cmd, add_cb, hash);
+}
+
+static void g_free_cb(gpointer data) { if(data) g_free(data); }
+
+GHashTable* 
+build_supported_fs_list(void)
+{
+	GHashTable* hash = g_hash_table_new_full(g_str_hash, g_str_equal, g_free_cb, g_free_cb);
+	GDir* dir = g_dir_open(FORMAT_SCRIPT_DIR, 0, NULL);
+	if(!dir) {
+		g_error("Formatting scripts path '%s' doesn't exist!", FORMAT_SCRIPT_DIR);
+		return NULL;
+	}
+
+	gchar* path;
+	const gchar* file = g_dir_read_name(dir);
+	while(file != NULL) {
+		path = g_build_filename(FORMAT_SCRIPT_DIR, file, NULL);
+		if(!add_supported_fs(path, hash))
+			g_warning(_("Error in script: '%s'"), path);
+		g_free(path);
+
+		file = g_dir_read_name(dir);
+	}
+	g_dir_close(dir);
+
+	return hash;
 }

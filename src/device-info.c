@@ -74,7 +74,7 @@ void format_volume_list_free(GSList* volume_list)
 	g_slist_free(volume_list);
 }
 
-/* We should really change the name of this func*/
+/* FIXME: We should really change the name of this func*/
 LibHalContext* 
 libhal_context_alloc(void)
 { 

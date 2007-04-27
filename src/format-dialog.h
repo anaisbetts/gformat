@@ -47,9 +47,10 @@ typedef struct _FormatDialog {
 	/* Stuff for filesystem list */
 	GtkComboBox* fs_combo;
 	GtkTreeStore* fs_model;
-	GHashTable* fs_map; 		/* This maps fs names ("ext3") to its Formatter */
+	GHashTable* fs_map; 		/* This maps fs names ("ext3") to its script */
 
 	/* HAL info */
+        gint hal_version; 		/* "1.3.4.5" => 1345 */
 	LibHalContext* hal_context;
 	GSList* hal_drive_list;		/* List of FormatVolume ptrs */
 	GSList* hal_volume_list; 	/* this too */
