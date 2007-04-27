@@ -328,19 +328,36 @@ setup_volume_treeview (FormatDialog* dialog)
 	dialog->volume_model = model;
 }
 
+struct _setup_fs_duple {
+	GtkTreeStore* model;
+	GtkTreeIter* parent;
+};
+
+static void
+setup_fs_cb(gpointer key, gpointer value, gpointer user_data)
+{
+	gchar* current_fs = key;
+	struct _setup_fs_duple* s = user_data;
+
+	gtk_tree_store_insert_with_values(s->model, NULL, s->parent, 100 /*ditto*/,
+		FS_COLUMN_REALNAME, current_fs,
+		FS_COLUMN_MARKUP, current_fs,
+		FS_COLUMN_SENSITIVE, FALSE, -1); /* We update this later */
+}
+
 static void
 setup_filesystem_menu(FormatDialog* dialog)
 {
 	GtkTreeStore* model;
-	model = gtk_tree_store_new(2, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN);
+	model = gtk_tree_store_new(3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN);
 	GtkComboBox* combo = dialog->fs_combo;
 	GtkCellRenderer* text_renderer;
+	gtk_combo_box_set_model(combo, GTK_TREE_MODEL(model));
 
 	/* Set up the column */
 	gtk_cell_layout_pack_start( GTK_CELL_LAYOUT(combo), (text_renderer = gtk_cell_renderer_text_new()), TRUE );
 	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), text_renderer, "markup", FS_COLUMN_MARKUP );
 	gtk_cell_layout_add_attribute( GTK_CELL_LAYOUT(combo), text_renderer, "sensitive", FS_COLUMN_SENSITIVE );
-	gtk_combo_box_set_model(combo, GTK_TREE_MODEL(model));
 
 	/* Add the default items */
 	gtk_tree_store_insert_with_values(model, NULL, NULL, 100 /*Always at end*/,
@@ -364,35 +381,10 @@ setup_filesystem_menu(FormatDialog* dialog)
 			FS_COLUMN_MARKUP, _("Specific Filesystem"),
 			FS_COLUMN_SENSITIVE, TRUE, -1);
 
-	#if 0
-	/* FIXME: This needs to be rewritified */
-	GSList* iter;
-	for(iter = dialog->formatter_list; iter != NULL; iter = g_slist_next(iter)) {
-		Formatter* current = iter->data;
-	
-		/* We do the hash nonsense to make sure we don't add duplicates
-		 * (ie parted and mkfs.ext2 both know how to format ext2 or something) */
-		int i;
-		for(i = 0; current->available_fs_list[i] != NULL; i++) {
-			const char* current_fs = current->available_fs_list[i];
-			if( g_hash_table_lookup(dlg->fs_map, current_fs) )
-				continue;
-
-			/*
-			GtkWidget* new_menu = gtk_menu_item_new_with_label(current_fs);
-			gtk_widget_set_name(new_menu, current_fs);
-			gtk_menu_shell_append(fs_menu, new_menu);
-			*/
-
-			gtk_tree_store_insert_with_values(model, NULL, &parent, 100 /*ditto*/,
-				FS_COLUMN_REALNAME, current_fs,
-				FS_COLUMN_MARKUP, current_fs,
-				FS_COLUMN_SENSITIVE, FALSE, -1); /* We update this later */
-
-			g_hash_table_insert(dlg->fs_map, current_fs, current);
-		}
-	}
-	#endif
+	/* Populate the specific fs list */
+	struct _setup_fs_duple s;
+	s.model = model; 	s.parent = &parent;
+	g_hash_table_foreach(dialog->fs_map, setup_fs_cb, &s);
 }
 
 static gboolean 

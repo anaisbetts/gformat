@@ -360,9 +360,6 @@
 		      <child>
 			<widget class="GtkComboBox" id="fs_combo">
 			  <property name="visible">True</property>
-			  <property name="items" translatable="yes">For all computers
-For Linux
-For Mac OS X</property>
 			  <property name="add_tearoffs">False</property>
 			  <property name="focus_on_click">True</property>
 			</widget>
