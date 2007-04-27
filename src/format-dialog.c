@@ -339,6 +339,7 @@ setup_fs_cb(gpointer key, gpointer value, gpointer user_data)
 	gchar* current_fs = key;
 	struct _setup_fs_duple* s = user_data;
 
+	g_debug("Adding fs: %s", current_fs);
 	gtk_tree_store_insert_with_values(s->model, NULL, s->parent, 100 /*ditto*/,
 		FS_COLUMN_REALNAME, current_fs,
 		FS_COLUMN_MARKUP, current_fs,
@@ -499,7 +500,7 @@ rebuild_volume_combo(FormatDialog* dialog)
 
 			treeiter_list = g_slist_prepend(treeiter_list, (current_treeiter = g_new0(GtkTreeIter, 1)) );
 
-			gtk_tree_store_insert_with_values(dialog->volume_model, current_treeiter, parent_treeiter, 0,
+			gtk_tree_store_insert_with_values(dialog->volume_model, current_treeiter, parent_treeiter, 1000,
 				DEV_COLUMN_UDI, current->udi, 
 				DEV_COLUMN_NAME_MARKUP, current->friendly_name, 
 				DEV_COLUMN_ICON, current->icon, 
@@ -819,8 +820,8 @@ format_dialog_new(void)
 
 	/* Set stuff in the dialog up */
 	setup_volume_treeview(dialog);	
-	setup_filesystem_menu(dialog);
 	dialog->fs_map = build_supported_fs_list();
+	setup_filesystem_menu(dialog);
 
 	gtk_widget_show_all (dialog->toplevel);
 	update_dialog(dialog);
