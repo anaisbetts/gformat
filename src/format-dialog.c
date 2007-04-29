@@ -60,6 +60,9 @@ enum {
 #define LUKS_HAL_MIN_VERSION 	581 		/* 0.5.8.1 */
 #define LUKS_BLKDEV_MIN_SIZE 	(1048576 << 4) 	/* At least 16M */
 
+/* Hacky forward declarations section */
+
+static void update_dialog(FormatDialog* dialog);
 
 /*
  * Utility Functions
@@ -296,6 +299,30 @@ warn_user_of_impending_doom(FormatDialog* dialog, FormatVolume* target)
 	gtk_widget_destroy(messagebox);
 
 	return (id == GTK_RESPONSE_OK);
+}
+
+static void
+start_operation(FormatDialog* dialog, int steps)
+{
+	dialog->total_ops = steps;
+	dialog->ops_left = steps;
+	update_dialog(dialog);
+}
+
+static void
+do_next_operation(FormatDialog* dialog, const gchar* progress_text)
+{
+	if(dialog->ops_left <= 0) {
+		dialog->ops_left = 0;
+		gtk_progress_set_value(dialog->progress_bar, 0.0);
+		gtk_progress_set_text(dialog->progress_bar, "");
+		update_dialog(dialog);
+		return;
+	}
+
+	gdouble percent = (gdouble)(dialog->total_ops - dialog->ops_left) / (gdouble)dialog->total_ops;
+	dialog->ops_left--;
+	gtk_progress_set_value(dialog->progress_bar, percent);
 }
 
 
@@ -613,7 +640,7 @@ static void
 update_sensitivity(FormatDialog* dialog)
 {
 	/* FIXME: We should probably disable other stuff while formatting too */
-	gtk_widget_set_sensitive(GTK_WIDGET(dialog->format_button), !dialog->is_formatting);
+	gtk_widget_set_sensitive(GTK_WIDGET(dialog->format_button), (dialog->ops_left == 0));
 }
 
 static void
@@ -702,10 +729,6 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 	FormatDialog* dialog = g_object_get_data( G_OBJECT(gtk_widget_get_toplevel(w)), "userdata" );
 	GError* err = NULL;
 
-	g_debug("Hal version: %d", dialog->hal_version);
-
-	/* XXX: The code here is completely cracked out, it's only here because
-	 * I need to rewrite it */
 	FormatVolume* vol;
 	char* blockdev;
 	char* fs;
@@ -755,9 +778,6 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 		error = (error ? error : g_error_new(0, -1, _("Unknown error")));
 	}
 #endif
-
-	do_encrypt = FALSE;		/* FIXME: We have to figure this out */
-	do_partition_table = TRUE;
 
 error_out:
 	g_free(blockdev);

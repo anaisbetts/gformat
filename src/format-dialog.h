@@ -56,9 +56,8 @@ typedef struct _FormatDialog {
 	GSList* hal_volume_list; 	/* this too */
 
 	/* Progress bar stuff */
-	gdouble progress_value;
-	char progress_text[512];
-	gboolean is_formatting;
+	gint total_ops;
+	gint ops_left; 			/* (ops_left == 0) => not formatting */
 } FormatDialog;
 
 /* Dumb struct to pass data to the worker thread */
