@@ -10,7 +10,7 @@ INCLUDES = \
 
 bin_PROGRAMS = gnome-format
 
-AM_CFLAGS = -std=c99 -g
+AM_CFLAGS = -std=c99 -g -O0
 
 gladedir = $(pkgdatadir)/glade
 glade_DATA = gformat.glade

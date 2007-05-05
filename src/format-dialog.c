@@ -31,15 +31,6 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-#include <glib/gi18n.h>
-#include <gtk/gtk.h>
-#include <libgnomeui/gnome-help.h>
-#include <libgnomeui/gnome-ui-init.h>
-#include <glade/glade.h>
-
-#include <libhal.h>
-#include <libhal-storage.h>
-
 #include "device-info.h"
 #include "formattify.h"
 #include "format-dialog.h"
@@ -98,18 +89,12 @@ get_fs_from_menuitem_name(const gchar* menuitem_name)
 	return ret;
 }
 
-static const gchar*
-get_fs_from_menu(FormatDialog* dialog)
-{
-	return "ext2";		/* FIXME: Figure out how to snag the current menu item */
-}
-
-gchar*
-get_udi_from_iter(FormatDialog* dialog, GtkTreeIter* iter)
+static gchar*
+get_string_from_model(GtkTreeModel* model, GtkTreeIter* iter, int column)
 {
 	char* ret;
 	GValue val = {0, };
-	gtk_tree_model_get_value(GTK_TREE_MODEL(dialog->volume_model), iter, DEV_COLUMN_UDI, &val);
+	gtk_tree_model_get_value(model, iter, column, &val);
 	if(val.g_type == 0)
 		return NULL;
 
@@ -118,20 +103,46 @@ get_udi_from_iter(FormatDialog* dialog, GtkTreeIter* iter)
 	return ret;
 }
 
-static gboolean
-hal_cb(gpointer data)
+gchar*
+get_fs_from_menu(FormatDialog* dialog)
+{
+	gchar *fs, *ret;
+	GtkTreeIter iter;
+
+	if(!gtk_combo_box_get_active_iter(dialog->fs_combo, &iter))
+		return NULL;
+
+	if( !(fs = get_string_from_model(GTK_TREE_MODEL(dialog->fs_model), &iter, FS_COLUMN_REALNAME)) )
+		return NULL;
+
+	/* Avoid weird malloc/free issues by extra strdup */
+	ret = g_strdup(get_fs_from_menuitem_name(fs));
+	g_free(fs);
+	return ret;
+}
+
+gchar*
+get_udi_from_iter(FormatDialog* dialog, GtkTreeIter* iter)
+{
+	return get_string_from_model(GTK_TREE_MODEL(dialog->volume_model), iter, DEV_COLUMN_UDI);
+}
+
+void
+get_hal_version(FormatDialog* dialog)
 {
 	gint hal_version = 0;
 	gchar** split = NULL;
-	g_assert(data != NULL);
+	gchar *output, *err;
+	gint status;
 
-	ProcessOutput* output = data;
-	FormatDialog* dialog = output->user_data;
-	g_assert(dialog != NULL);
-	if(!output->stdout_output)
+	/* FIXME: This is hardcoded. This is bad. */
+	if(!g_spawn_command_line_sync("/usr/sbin/hald --version", &output, &err, &status, NULL))
 		goto out;
 
-	split = g_strsplit_set(output->stderr_output, " .", 0 /*All tokens*/);
+	if(!output)
+		goto out;
+
+	split = g_strsplit_set(output, " .", 0 /*All tokens*/);
 
 	if(!split || !split[0])
 		goto out;
@@ -144,18 +155,7 @@ hal_cb(gpointer data)
 out:
 	if(split)
 		g_strfreev(split);
-	process_output_free(output);
 	dialog->hal_version = hal_version;
-	return FALSE;
-}
-
-void
-get_hal_version(FormatDialog* dialog)
-{
-	/* FIXME: This is hardcoded. This is bad. */
-	const char* cmd[] = {"/usr/sbin/hald", "--version"};
-	if(!spawn_async_get_output(cmd, hal_cb, dialog))
-		dialog->hal_version = 0;
 }
 
 static gboolean
@@ -314,15 +314,15 @@ do_next_operation(FormatDialog* dialog, const gchar* progress_text)
 {
 	if(dialog->ops_left <= 0) {
 		dialog->ops_left = 0;
-		gtk_progress_set_value(dialog->progress_bar, 0.0);
-		gtk_progress_set_text(dialog->progress_bar, "");
+		gtk_progress_set_value(GTK_PROGRESS(dialog->progress_bar), 0.0);
+		gtk_progress_set_text(GTK_PROGRESS(dialog->progress_bar), "");
 		update_dialog(dialog);
 		return;
 	}
 
 	gdouble percent = (gdouble)(dialog->total_ops - dialog->ops_left) / (gdouble)dialog->total_ops;
 	dialog->ops_left--;
-	gtk_progress_set_value(dialog->progress_bar, percent);
+	gtk_progress_set_value(GTK_PROGRESS(dialog->progress_bar), percent);
 }
 
 
@@ -370,7 +370,7 @@ setup_fs_cb(gpointer key, gpointer value, gpointer user_data)
 	gtk_tree_store_insert_with_values(s->model, NULL, s->parent, 100 /*ditto*/,
 		FS_COLUMN_REALNAME, current_fs,
 		FS_COLUMN_MARKUP, current_fs,
-		FS_COLUMN_SENSITIVE, FALSE, -1); /* We update this later */
+		FS_COLUMN_SENSITIVE, TRUE, -1); /* We update this later */
 }
 
 static void
@@ -412,6 +412,7 @@ setup_filesystem_menu(FormatDialog* dialog)
 	/* Populate the specific fs list */
 	struct _setup_fs_duple s;
 	s.model = model; 	s.parent = &parent;
+	dialog->fs_map = build_supported_fs_list();
 	g_hash_table_foreach(dialog->fs_map, setup_fs_cb, &s);
 }
 
@@ -640,7 +641,17 @@ static void
 update_sensitivity(FormatDialog* dialog)
 {
 	/* FIXME: We should probably disable other stuff while formatting too */
-	gtk_widget_set_sensitive(GTK_WIDGET(dialog->format_button), (dialog->ops_left == 0));
+	if(dialog->ops_left == 0) {
+		gtk_widget_show(dialog->format_button);
+		gtk_widget_hide(dialog->cancel_button);
+	} else {
+		gtk_widget_hide(dialog->format_button);
+		gtk_widget_show(dialog->cancel_button);
+	}
+
+	GtkTreeIter iter;
+	gboolean format_enabled = (gtk_combo_box_get_active_iter(dialog->volume_combo, &iter));
+	gtk_widget_set_sensitive(dialog->format_button, format_enabled);
 }
 
 static void
@@ -676,6 +687,7 @@ on_volume_combo_changed(GtkWidget* w, gpointer user_data)
 	FormatDialog* dialog = g_object_get_data( G_OBJECT(gtk_widget_get_toplevel(w)), "userdata" );
 	update_extra_info(dialog);
 	update_options_visibility(dialog);
+	update_sensitivity(dialog);
 }
 
 void
@@ -828,6 +840,7 @@ format_dialog_new(void)
 	dialog->extra_volume_hbox = GTK_HBOX(glade_xml_get_widget(dialog->xml, "extra_volume_hbox"));
 	dialog->progress_bar = GTK_PROGRESS_BAR(glade_xml_get_widget(dialog->xml, "progress_bar"));
 	dialog->format_button = GTK_BUTTON(glade_xml_get_widget(dialog->xml, "format_button"));
+	dialog->cancel_button = GTK_BUTTON(glade_xml_get_widget(dialog->xml, "cancel_button"));
 	dialog->luks_subwindow = GTK_BOX(glade_xml_get_widget (dialog->xml, "luks_subwindow"));
 	dialog->floppy_subwindow = GTK_BOX(glade_xml_get_widget (dialog->xml, "floppy_subwindow"));
 	g_assert(dialog->toplevel != NULL);
@@ -840,7 +853,6 @@ format_dialog_new(void)
 
 	/* Set stuff in the dialog up */
 	setup_volume_treeview(dialog);	
-	dialog->fs_map = build_supported_fs_list();
 	setup_filesystem_menu(dialog);
 
 	gtk_widget_show_all (dialog->toplevel);

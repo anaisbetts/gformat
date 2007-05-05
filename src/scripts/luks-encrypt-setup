@@ -1,0 +1,35 @@
+#!/usr/bin/perl -w
+
+# Do luks encryption setup
+# Based on luksformat - wrapper around LUKS-capable cryptsetup and mkfs for easy
+# creation of an encrypted device.
+#
+# (C) 2005 Canonical Ltd.
+# Author: Martin Pitt <martin.pitt@ubuntu.com>
+# License: GNU General Public License, v2 or any later
+# (http://www.gnu.org/copyleft/gpl.html)
+
+use Getopt::Long;
+
+$device = $ARGV[0];
+$key_file = $ARGV[1];
+
+# generate temporary mapped device name which is not yet used
+$name = "";
+for ($i = 1; $i < 100; $i++) {
+    if (! -e "/dev/mapper/luksformat$i") {
+	$name = "luksformat$i";
+	last;
+    }
+}
+(-e $key_file) or die "Error: Key file does not exist";
+
+$name or die "Error: could not generate temporary mapped device name";
+
+# we do not need to be overly concerned with race conditions here, cryptsetup
+# will just fail if the name already exists now.
+print "Creating encrypted device on $device...\n";
+if ((system 'cryptsetup', 'luksFormat', '--cipher', 'aes-cbc-essiv:sha256', $device, $key_file)) {
+    die "Could not create LUKS device $device";
+
+}

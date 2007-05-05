@@ -24,6 +24,15 @@
 #ifndef _FORMAT_DIALOG_H
 #define _FORMAT_DIALOG_H
 
+#include <glib/gi18n.h>
+#include <gtk/gtk.h>
+#include <libgnomeui/gnome-help.h>
+#include <libgnomeui/gnome-ui-init.h>
+#include <glade/glade.h>
+
+#include <libhal.h>
+#include <libhal-storage.h>
+
 #include "device-info.h"
 
 typedef struct _FormatDialog {
@@ -42,6 +51,7 @@ typedef struct _FormatDialog {
 	GtkLabel* extra_volume_info;
 	GtkHBox* extra_volume_hbox;
 	GtkButton* format_button;
+	GtkButton* cancel_button;
 	GtkProgressBar* progress_bar;
 
 	/* Stuff for filesystem list */

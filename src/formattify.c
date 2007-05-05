@@ -37,12 +37,19 @@
 #include <parted/parted.h>
 
 #include "device-info.h"
+#include "format-dialog.h"
 #include "formattify.h"
 
 /* TODO: Put this into configure.in */
 #ifndef FORMAT_SCRIPT_DIR
 #define FORMAT_SCRIPT_DIR "./scripts"
 #endif
+
+
+
+/*
+ * Process-spawning functions
+ */
 
 struct _spawn_cb_pack {
 	GFunc real_cb;
@@ -86,6 +93,7 @@ spawn_async_get_output(gchar** argv, GSourceFunc callback, gpointer user_data)
 
 	if(!g_spawn_async_with_pipes(NULL, argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD, NULL, user_data, &pid, 
 				     NULL, &out_fd, &error_fd, NULL)) {
+		g_warning("Spawn async failed!\n");
 		return FALSE;
 	}
 	g_debug("Out fd=%d, Err fd=%d", out_fd, error_fd);
@@ -109,6 +117,10 @@ process_output_free(ProcessOutput* obj)
 }
 
 
+/*
+ * High-level script functions
+ */
+
 static gboolean
 add_cb(gpointer data)
 {
@@ -117,8 +129,21 @@ add_cb(gpointer data)
 	ProcessOutput* output = data;
 	GHashTable* table = output->user_data;
 
-	if(!output->stdout_output)
-		goto out;
+}
+
+static gboolean
+add_supported_fs(const char* script_path, GHashTable* hash)
+{
+	gchar* cmd[] = {"", "--capabilities", NULL};
+	gchar *out, *err;
+	gint status;
+	cmd[0] = script_path;
+
+	if(!g_spawn_sync(NULL, cmd, NULL, 0, NULL, NULL, &out, &err, &status, NULL))
+		return FALSE;
+
+	if(!out)
+		return FALSE;
 
 	/* Parse a list of supported filesystems in the format:
 	 *
@@ -128,24 +153,15 @@ add_cb(gpointer data)
 	 * /usr/sbin/reiserfscreate
 	 * etc... 
 	 */
-	gchar** split = g_strsplit(output->stdout_output, "\n", 0/*all tokens*/);
+	gchar** split = g_strsplit(out, "\n", 0/*all tokens*/);
 	gchar** iter = split;
-	while(iter && iter[1]) {
+	while(iter[0] && iter[1]) {
 		g_debug("Adding %s, %s", iter[0], iter[1]);
-		g_hash_table_insert(table, g_strdup(iter[0]), g_strdup(iter[1]));
+		g_hash_table_insert(hash, g_strdup(iter[0]), g_strdup(iter[1]));
 		iter += 2;
 	}
 	
-out:
-	return FALSE;
-}
-
-static gboolean
-add_supported_fs(const char* script_path, GHashTable* hash)
-{
-	const char* cmd[] = {"", "--capabilities"};
-	cmd[0] = script_path;
-	return spawn_async_get_output(cmd, add_cb, hash);
+	return TRUE;
 }
 
 static void g_free_cb(gpointer data) { if(data) g_free(data); }
@@ -164,6 +180,8 @@ build_supported_fs_list(void)
 	const gchar* file = g_dir_read_name(dir);
 	while(file != NULL) {
 		path = g_build_filename(FORMAT_SCRIPT_DIR, file, NULL);
+		g_debug("path = %s, file = %s, FORMAT_SCRIPT_DIR = %s", path, file, FORMAT_SCRIPT_DIR);
+
 		if(!add_supported_fs(path, hash))
 			g_warning(_("Error in script: '%s'"), path);
 		g_free(path);
@@ -172,5 +190,23 @@ build_supported_fs_list(void)
 	}
 	g_dir_close(dir);
 
+	g_debug("Filesystem list has %d entries", g_hash_table_size(hash));
+
 	return hash;
+}
+
+
+/*
+ * Format idle-loop tasks
+ */
+
+gboolean 
+do_mkfs(gpointer data)
+{
+	g_assert(data != NULL);
+	FormatDialog* dialog = data;
+
+	/* Figure out which script to run */
+	//gchar* fs_name = 
+	//gchar* fs_script = dialog->fs_map
 }
