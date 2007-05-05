@@ -144,8 +144,10 @@ add_supported_fs(const char* script_path, GHashTable* hash)
 	gchar** split = g_strsplit(out, "\n", 0/*all tokens*/);
 	gchar** iter = split;
 	while(*iter != NULL) {
-		g_debug("Adding %s to %s", (*iter), script_path);
-		g_hash_table_insert(hash, g_strdup(iter[0]), g_strdup(script_path));
+		if(strlen(*iter) > 1) 	{
+			g_debug("Adding %s to %s", (*iter), script_path);
+			g_hash_table_insert(hash, g_strdup(iter[0]), g_strdup(script_path));
+		}
 		iter++;
 	}
 	
