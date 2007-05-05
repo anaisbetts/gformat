@@ -10,11 +10,6 @@ desktop_files = $(desktop_in_files:.desktop.in=.desktop)
 Applicationsdir = $(datadir)/applications
 Applications_DATA = $(desktop_files)
 
-#schemasdir = $(GCONF_SCHEMA_FILE_DIR)
-#schemas_in_file = gnome-format.schemas.in
-#schemas_DATA = $(schemas_in_file:.schemas.in=.schemas)
-#INTLTOOL_SCHEMAS_RULE@
-
 INTLTOOL =                      \
         intltool-extract.in     \
         intltool-merge.in       \
@@ -24,11 +19,7 @@ EXTRA_DIST = \
 	$(desktop_in_files)  	\
 	$(INTLTOOL)
 	
-	#$(schemas_in_file) 
-	#$(schemas_DATA)
-
 install-data-local: gnome-format.desktop install-misc-local 
-#install-gconf-schemas
 
 install-misc-local:
 	@$(NORMAL_INSTALL)
@@ -53,5 +44,4 @@ dist-hook:
 	cd $(distdir) ; rm -f $(CLEANFILES)
 
 CLEANFILES = 			\
-	gnome-format.desktop		\
-	#gnome-format.schemas	
+	gnome-format.desktop	
