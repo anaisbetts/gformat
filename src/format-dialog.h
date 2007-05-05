@@ -68,22 +68,20 @@ typedef struct _FormatDialog {
 	/* Progress bar stuff */
 	gint total_ops;
 	gint ops_left; 			/* (ops_left == 0) => not formatting */
+	GError* format_error;
+	char* mkfs_target;
 } FormatDialog;
-
-/* Dumb struct to pass data to the worker thread */
-typedef struct _fmt_thread_params {
-	FormatDialog* dialog;
-	FormatVolume* vol;
-	gchar* blockdev;			/* This is redundant, but it's to make threading stuff easier */
-	gchar* fs;
-	gboolean do_encrypt;
-	gboolean do_partition_table;
-	int partition_number;
-	GHashTable* options;
-	GError* error;
-} fmt_thread_params;
 
 FormatDialog* format_dialog_new(void);
 void format_dialog_free(FormatDialog* obj);
+
+/* Progress bar functions */
+void handle_format_error(FormatDialog* dialog);
+void start_operation(FormatDialog* dialog, int steps);
+void finish_operation(FormatDialog* dialog);
+void do_next_operation(FormatDialog* dialog, const gchar* progress_text);
+
+/* Functions to help out format tasks */
+gchar* get_fs_from_menu(FormatDialog* dialog);
 
 #endif

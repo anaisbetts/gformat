@@ -122,16 +122,6 @@ process_output_free(ProcessOutput* obj)
  */
 
 static gboolean
-add_cb(gpointer data)
-{
-	g_assert(data != NULL);
-
-	ProcessOutput* output = data;
-	GHashTable* table = output->user_data;
-
-}
-
-static gboolean
 add_supported_fs(const char* script_path, GHashTable* hash)
 {
 	gchar* cmd[] = {"", "--capabilities", NULL};
@@ -148,17 +138,15 @@ add_supported_fs(const char* script_path, GHashTable* hash)
 	/* Parse a list of supported filesystems in the format:
 	 *
 	 * ext2
-	 * /usr/sbin/mkfs.ext2
 	 * reiserfs
-	 * /usr/sbin/reiserfscreate
 	 * etc... 
 	 */
 	gchar** split = g_strsplit(out, "\n", 0/*all tokens*/);
 	gchar** iter = split;
-	while(iter[0] && iter[1]) {
-		g_debug("Adding %s, %s", iter[0], iter[1]);
-		g_hash_table_insert(hash, g_strdup(iter[0]), g_strdup(iter[1]));
-		iter += 2;
+	while(*iter != NULL) {
+		g_debug("Adding %s to %s", (*iter), script_path);
+		g_hash_table_insert(hash, g_strdup(iter[0]), g_strdup(script_path));
+		iter++;
 	}
 	
 	return TRUE;
@@ -197,16 +185,58 @@ build_supported_fs_list(void)
 
 
 /*
- * Format idle-loop tasks
+ * High-level format tasks
+ *
+ * There are a few conventions that these functions rely on to be a part of the
+ * framework that keeps track of how many things there are left to do and show
+ * correct info on the progress bar. First, they must all return immediately if 
+ * an error is set (dialog->format_error). This makes the code clearer and 
+ * makes it so we don't have to write ugly code to check the error all the time.
+ * Next, they should enqueue the next operation to do via do_next_operation()
  */
 
-gboolean 
-do_mkfs(gpointer data)
+static gboolean
+mkfs_cb(gpointer data)
 {
 	g_assert(data != NULL);
-	FormatDialog* dialog = data;
+	ProcessOutput* output = data;
+	FormatDialog* dialog = output->user_data;
+
+	g_debug("ret = %d, stdout = '%s', stderr = '%s'", output->ret, output->stdout_output, output->stderr_output);
+	if(output->ret != 0) {
+		/* FIXME: Make better error messages */
+		g_set_error(&dialog->format_error, 0, output->ret, _("Error creating filesystem"));
+		g_warning("Output from script: '%s'", output->stderr_output);
+		handle_format_error(dialog);
+		return FALSE;
+	}
+	finish_operation(dialog);
+
+	return FALSE;
+}
+
+gboolean
+do_mkfs(FormatDialog* dialog, const char* block_device)
+{
+	gchar *fs_name, *fs_flag;
+	const gchar* fs_script;
+
+	if(dialog->format_error)
+		return FALSE;
 
 	/* Figure out which script to run */
-	//gchar* fs_name = 
-	//gchar* fs_script = dialog->fs_map
+	if( !(fs_name = get_fs_from_menu(dialog)) )
+		return FALSE;
+
+	fs_script = g_hash_table_lookup(dialog->fs_map, fs_name);
+	g_assert(fs_script != NULL); 	
+	fs_flag = g_strdup_printf("-t %s", fs_name); 	g_free(fs_name);
+
+	const gchar* cmd[] = {fs_script, fs_flag, block_device, NULL};
+	g_debug("mkfs command: %s %s %s", fs_script, fs_flag, block_device);
+	if(!spawn_async_get_output(cmd, mkfs_cb, dialog)) {
+		return FALSE;
+	}
+
+	return TRUE;
 }

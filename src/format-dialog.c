@@ -178,18 +178,6 @@ floppy_valid_for_device (const FormatVolume* dev)
 	return FALSE;
 }
 
-static gboolean
-formatter_handle_error(gpointer data)
-{
-	fmt_thread_params* params = data;
-	gchar* pri_msg = g_strdup_printf(_("There was an error formatting %s"), params->vol->friendly_name);
-	show_error_dialog(params->dialog->toplevel, pri_msg, params->error->message);
-
-	g_error_free(params->error);
-	g_free(params);
-	return FALSE;
-}
-
 static const FormatVolume* 
 get_cached_device_from_udi(FormatDialog* dialog, const char* udi)
 {
@@ -301,22 +289,46 @@ warn_user_of_impending_doom(FormatDialog* dialog, FormatVolume* target)
 	return (id == GTK_RESPONSE_OK);
 }
 
-static void
+void 
+handle_format_error(FormatDialog* dialog)
+{
+	show_error_dialog(dialog->toplevel, _("Error formatting device"), dialog->format_error->message);
+	finish_operation(dialog);
+}
+
+void
 start_operation(FormatDialog* dialog, int steps)
 {
 	dialog->total_ops = steps;
 	dialog->ops_left = steps;
+	if(dialog->format_error) {
+		g_error_free(dialog->format_error);
+		dialog->format_error = NULL;
+	}
+
 	update_dialog(dialog);
 }
 
-static void
+void
+finish_operation(FormatDialog* dialog)
+{
+	dialog->ops_left = 0;
+	gtk_progress_set_value(GTK_PROGRESS(dialog->progress_bar), 0.0);
+	gtk_progress_bar_set_text(dialog->progress_bar, "");
+
+	update_dialog(dialog);
+}
+
+void
 do_next_operation(FormatDialog* dialog, const gchar* progress_text)
 {
+	if(dialog->format_error) {
+		handle_format_error(dialog);
+		return;
+	}
+
 	if(dialog->ops_left <= 0) {
-		dialog->ops_left = 0;
-		gtk_progress_set_value(GTK_PROGRESS(dialog->progress_bar), 0.0);
-		gtk_progress_set_text(GTK_PROGRESS(dialog->progress_bar), "");
-		update_dialog(dialog);
+		finish_operation(dialog);
 		return;
 	}
 
@@ -381,6 +393,7 @@ setup_filesystem_menu(FormatDialog* dialog)
 	GtkComboBox* combo = dialog->fs_combo;
 	GtkCellRenderer* text_renderer;
 	gtk_combo_box_set_model(combo, GTK_TREE_MODEL(model));
+	dialog->fs_model = model;
 
 	/* Set up the column */
 	gtk_cell_layout_pack_start( GTK_CELL_LAYOUT(combo), (text_renderer = gtk_cell_renderer_text_new()), TRUE );
@@ -762,15 +775,16 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 		g_debug("User cancelled format!");
 		return;
 	}
-
-	/* FIXME: Stop us from going into unfinished function */
-	return;
-
+	
 	if(vol->volume) {
+		start_operation(dialog, 1);
+		do_next_operation(dialog, _("Creating filesystem..."));
 		blockdev = g_strdup(libhal_volume_get_device_file(vol->volume));
-		partition_number = libhal_volume_get_partition_number(vol->volume);
-		vol = vol;
+		do_mkfs(dialog, blockdev);
 	} else {
+		/* FIXME: Stop us from going into unfinished function */
+		return;
+
 		/* TODO: Figure out what to do if any other partition is mounted on this drive */
 		if(!(vol = write_partition_table(dialog, vol, fs)))
 			goto error_out;
@@ -779,18 +793,7 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 		partition_number = 1;
 	}
 
-#if 0
-	if(!formatter_execute(dialog->formatter_list, 
-				blockdev,
-				fs,
-				partition_number,
-				options,
-				&error)) {
-		/* Always make sure there is an error on failure */
-		error = (error ? error : g_error_new(0, -1, _("Unknown error")));
-	}
-#endif
-
+	
 error_out:
 	g_free(blockdev);
 	g_free(fs);
