@@ -1,9 +1,14 @@
 For 2.20:
 	* Finish formatting backend
-		- Just format a partition
+		- Just format a partition (DONE)
 		- Rewrite table and format
+		- Ask HAL to remount the new partition
 
-	* Write scripts to handle various filesystems
+	* Make sure everything is unmounted before we trash drive
+
+	* Clean up info display, make sure (null) isn't displayed
+	
+	* Write scripts to handle various filesystems (DONE)
 
 	* Fix GTK errors and clean up filesystem type dialog
 
