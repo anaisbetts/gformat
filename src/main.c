@@ -37,7 +37,7 @@
 #include "format-dialog.h"
 
 /* Command-line stuff */
-static GOptionEntry entries[] = 
+const static GOptionEntry entries[] = 
 {
 	{ NULL }
 };
@@ -46,23 +46,31 @@ static GOptionEntry entries[] =
 int
 main (int argc, char *argv[])
 {
-	/* Initialize gettext support */
+	
+	FormatDialog *dialog;
+	GError *error = NULL;
+        /*OptionContext* context = g_option_context_new ( _("- Formats a removable disk") );*/
+        
+        /* Initialize gettext support */
 	bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	textdomain (GETTEXT_PACKAGE);
 
-	/* Parse the command line */
-	GError *error = NULL;
-	GOptionContext* context = g_option_context_new ( _("- Formats a removable disk") );
+	/* Parse the command line 
 	g_option_context_add_main_entries (context, entries, GETTEXT_PACKAGE);
 	g_option_context_add_group (context, gtk_get_option_group(TRUE));
 	g_option_context_parse (context, &argc, &argv, &error);
 	g_option_context_free (context);
+        */
 
-	gtk_init(&argc, &argv);
+        if (!gtk_init_with_args (&argc, &argv, NULL, entries, NULL, &error)) {
+                g_print ("%s\n\n", error->message);
+                return -1;
+        }
+        
+        /*gtk_init(&argc, &argv);*/
         g_thread_init (NULL);
 	
-	FormatDialog *dialog;
 	dialog = format_dialog_new();
 	if(dialog != NULL) {
 		gtk_main ();
