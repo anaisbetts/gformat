@@ -69,7 +69,8 @@ main (int argc, char *argv[])
         }
         
         /*gtk_init(&argc, &argv);*/
-	
+
+        gtk_window_set_default_icon_name ("gnome-dev-floppy");
 	dialog = format_dialog_new();
 	gtk_main ();
 	format_dialog_free(dialog);
