@@ -37,7 +37,7 @@
 #include "format-dialog.h"
 
 /* Command-line stuff */
-const static GOptionEntry entries[] = 
+static GOptionEntry entries[] = 
 {
 	{ NULL }
 };
@@ -69,14 +69,10 @@ main (int argc, char *argv[])
         }
         
         /*gtk_init(&argc, &argv);*/
-        g_thread_init (NULL);
 	
 	dialog = format_dialog_new();
-	if(dialog != NULL) {
-		gtk_main ();
-		format_dialog_free(dialog);
-	}
+	gtk_main ();
+	format_dialog_free(dialog);
   
-
 	return 0;
 };
