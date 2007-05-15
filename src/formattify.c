@@ -208,7 +208,7 @@ mkfs_cb(gpointer data)
 	if(output->ret != 0) {
 		/* FIXME: Make better error messages */
 		g_set_error(&dialog->format_error, 0, output->ret, _("Error creating filesystem"));
-		g_warning("Output from script: '%s'", output->stderr_output);
+		//g_debug("Output from script: '%s'", output->stderr_output);
 		handle_format_error(dialog);
 		return FALSE;
 	}

@@ -27,3 +27,6 @@ Future:
 	  the real way to solve permissions issues but until HAL decides to do
 	  this we can't do much other than harass them
 
+	* Implement CDRW/DVDRW erasing support
+		- http://bugzilla.gnome.org/show_bug.cgi?id=312100
+		- http://bugzilla.gnome.org/show_bug.cgi?id=160266

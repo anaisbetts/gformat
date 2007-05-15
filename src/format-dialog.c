@@ -188,7 +188,7 @@ get_cached_device_from_udi(FormatDialog* dialog, const char* udi)
 		FormatVolume* current = iter->data;
 
 		if(current == NULL) {
-			g_error("current volume is null?");
+			g_warning("Current volume is null!");
 			continue;
 		}
 
@@ -887,6 +887,11 @@ format_dialog_new(void)
 
 void format_dialog_free(FormatDialog* obj)
 {
+	/* Free our toplevel first, so we don't end up jumping into event
+	 * handlers that don't have anything to do */
+	g_object_unref(obj->toplevel);
+	g_object_unref(obj->xml);
+
 	if(obj->hal_context)
 		libhal_ctx_free(obj->hal_context);
 	
@@ -902,12 +907,6 @@ void format_dialog_free(FormatDialog* obj)
 
 	if(obj->hal_context)
 		libhal_ctx_free(obj->hal_context);
-
-	/* Free our windows */
-	g_object_unref(obj->luks_subwindow);
-	g_object_unref(obj->floppy_subwindow);
-	g_object_unref(obj->toplevel);
-	g_object_unref(obj->xml);
 
 	g_free(obj);
 }

@@ -458,7 +458,7 @@ build_volume_list(LibHalContext* ctx,
 	for(i=0; i < device_udi_count; i++) {
 		current = g_new0(FormatVolume, 1);
 
-		g_warning("udi: %s", device_udis[i]);
+		g_debug("udi: %s", device_udis[i]);
 		current->udi = g_strdup(device_udis[i]);
 		switch(type) {
 		case FORMATVOLUMETYPE_VOLUME:
@@ -483,7 +483,7 @@ build_volume_list(LibHalContext* ctx,
 				continue;
 			}
 
-			g_warning("Icon drive: %s; Icon volume: %s",
+			g_debug("Icon drive: %s; Icon volume: %s",
 					libhal_drive_get_dedicated_icon_drive(current->drive),
 					libhal_drive_get_dedicated_icon_volume(current->drive));
 			icon_path = libhal_drive_get_dedicated_icon_drive(current->drive);
