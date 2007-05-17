@@ -1,7 +1,7 @@
 For 2.20:
 	* Finish formatting backend
 		- Just format a partition (DONE)
-		- Rewrite table and format
+		- Rewrite table and format (DONE)
 		- Ask HAL to remount the new partition
 
 	* Make sure everything is unmounted before we trash drive
@@ -10,7 +10,7 @@ For 2.20:
 	
 	* Write scripts to handle various filesystems (DONE)
 
-	* Fix GTK errors and clean up filesystem type dialog
+	* Fix GTK errors and clean up filesystem type dialog (MOSTLY DONE)
 
 	* Fix HAL problems regarding automatically updating device dialog
 
@@ -22,6 +22,8 @@ For 2.20:
 	
 Future:
 	* Add support for other file system types, when they are available
+
+	* Finish LUKS encryption support
 
 	* Use HAL to do formatting instead of spawning out processes - this is
 	  the real way to solve permissions issues but until HAL decides to do
