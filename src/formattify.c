@@ -46,7 +46,6 @@
 #endif
 
 
-
 /*
  * Process-spawning functions
  */
@@ -234,7 +233,7 @@ do_mkfs(FormatDialog* dialog, const char* block_device)
 	g_assert(fs_script != NULL); 	
 	fs_flag = g_strdup_printf("-t %s", fs_name); 	g_free(fs_name);
 
-	const gchar* cmd[] = {fs_script, fs_flag, block_device, NULL};
+	gchar* cmd[] = {fs_script, fs_flag, block_device, NULL};
 	g_debug("mkfs command: %s %s %s", fs_script, fs_flag, block_device);
 	if(!spawn_async_get_output(cmd, mkfs_cb, dialog)) {
 		return FALSE;

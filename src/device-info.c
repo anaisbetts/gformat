@@ -43,6 +43,65 @@
 #include "device-info.h"
 #include "partutil.h"
 
+
+/*
+ * Filesystem to partition type table
+ */
+
+struct _PartTypeDict {
+	const char* fs_name;
+	int msdos_value;
+};
+
+const struct _PartTypeDict PartTypeDict[] = {
+	{ "cramfs", 0x83 },
+	{ "ext2", 0x83 },
+	{ "ext3", 0x83 },
+	{ "hfs", 0xAF }, 
+	{ "hfsplus", 0xAF }, 
+	{ "jfs", 0x83 },
+	{ "msdos", 0x06 },
+	{ "ntfs", 0x07 },
+	{ "reiser4", 0x83 },
+	{ "reiserfs", 0x83 },
+	{ "vfat", 0x0C },
+	{ "xfs", 0x83 },
+	NULL
+};
+
+/*
+ * Stupid alternate table support
+ *
+ * Left side is MSDOS name, right side is alternate name
+ */
+
+struct _AltTableDict {
+	const char* msdos;
+	const char* alt;
+};
+
+const struct _AltTableDict GPTTable[] = {
+	{ "0x01", "{EBD0A0A2-B9E5-4433-87C0-68B6B72699C7}" },  /* Fat12 => Windows Basic Data */
+	{ "0x07", "{EBD0A0A2-B9E5-4433-87C0-68B6B72699C7}" },  /* NTFS => Windows Basic Data */
+	{ "0x0C", "{EBD0A0A2-B9E5-4433-87C0-68B6B72699C7}" },  /* Fat32 => Windows Basic Data */
+	{ "0x83", "{EBD0A0A2-B9E5-4433-87C0-68B6B72699C7}" },  /* Linux Data */
+	{ "0xAF", "{48465300-0000-11AA-AA11-00306543ECAC}" }, /* HFS/HFS+ => Apple Basic */
+	NULL
+};
+
+const struct _AltTableDict AppleTable[] = {
+	{ "0x01", "DOS_FAT_12" },
+	{ "0x0C", "DOS_FAT_32" },
+	{ "0x83", "Apple_Unix_SVR2" },  
+	{ "0xAF", "Apple_HFS" },
+	NULL
+};
+
+
+/*
+ * Functions
+ */
+
 void 
 format_volume_free(FormatVolume* fvol)
 {
@@ -286,6 +345,45 @@ get_friendly_volume_info(LibHalContext* ctx, LibHalVolume* volume)
 	return ret;
 }
 
+
+/*
+ * Partition table conversion
+ */
+int 
+get_part_type_from_fs(const char* fs_name)
+{
+	const struct _PartTypeDict* iter = PartTypeDict;
+	while(iter) {
+		if(!strcmp(fs_name, iter->fs_name))
+			return iter->msdos_value;
+		iter++;
+	}
+	return 0x83; 		/* Use Linux by default */
+}
+
+char* 
+get_parted_type_string(int msdos_parttype, PartitionScheme scheme)
+{
+	char* msdos = g_strdup_printf("0x%X", msdos_parttype);
+	if(scheme == PART_TYPE_MSDOS || scheme == PART_TYPE_MSDOS_EXTENDED)
+		return msdos;
+
+	char* ret = (scheme == PART_TYPE_APPLE ? "Apple_Unix_SVR2" : "{EBD0A0A2-B9E5-4433-87C0-68B6B72699C7}");
+	const struct _AltTableDict* table_item = (scheme == PART_TYPE_APPLE ? AppleTable : GPTTable);
+	while(table_item) {
+		if(!strcmp(msdos, table_item->msdos))  {
+			ret = table_item->alt;
+			goto out;
+		}
+		table_item++;
+	}
+
+out:
+	g_free(msdos);
+	return g_strdup(ret);
+}
+
+
 /* from <linux/fs.h> */
 #define _IO(type,nr)		_IOC(_IOC_NONE,(type),(nr),0)
 #define BLKRRPART  _IO(0x12,95) /* re-read partition table */
@@ -341,6 +439,10 @@ write_partition_table_for_device(LibHalDrive* drive, PartitionScheme scheme, GEr
 	 * 63 */
 	const int start = 512*63;
 	guint64 size = (guint64)libhal_drive_get_size(drive);
+	if(size == 0) {
+		/* Try to get the media size - even for USB disks we have to do this */
+		size = (guint64)libhal_drive_get_media_size(drive);
+	}
 	if(size < start) {
 		msg = _("Cannot create partition table on %s");
 		goto error_out;
@@ -361,7 +463,7 @@ write_partition_table_for_device(LibHalDrive* drive, PartitionScheme scheme, GEr
 	}
 
 	guint64 dontcare;
-	if(!part_add_partition(dev, start, size, &dontcare, &dontcare, 
+	if(!part_add_partition(dev, start, size - start, &dontcare, &dontcare, 
 			       (char*)type, NULL, NULL, 0, 0)) {
 		msg = _("Cannot add new partition on %s");
 		goto error_out;
@@ -381,6 +483,31 @@ error_out:
 	g_set_error(error, 0, 0, _("Cannot create partition table on %s"), name);
 	g_free(name);
 	return FALSE;
+}
+
+gboolean
+set_partition_type(LibHalDrive* drive, int partition, int msdos_type)
+{
+	const char* dev = libhal_drive_get_device_file(drive);
+	if(!dev) 	return FALSE;
+
+	PartitionTable* table = part_table_load_from_disk(dev);
+	if(!table) 	return FALSE;
+	int entries = part_table_get_num_entries(table);
+	if(entries < partition) 	return FALSE;
+	PartitionScheme scheme = part_table_get_scheme(table);
+
+	gboolean ret;
+	guint64 start, size, dontcare;
+	char* type;
+	start = part_table_entry_get_offset(table, partition);
+	size = part_table_entry_get_size(table, partition);
+	type = get_parted_type_string(msdos_type, scheme);
+	
+	ret = part_change_partition(dev, start, start, size, &dontcare, &dontcare, 
+				type, NULL, NULL, 0, 0);
+	g_free(type);
+	return ret;
 }
 
 GSList* 

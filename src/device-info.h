@@ -69,7 +69,12 @@ gchar* get_friendly_volume_name(LibHalContext* ctx, LibHalVolume* volume);
 gchar* get_friendly_volume_info(LibHalContext* ctx, LibHalVolume* volume);
 
 GHashTable* create_icon_cache(void);
+
+int get_part_type_from_fs(const char* fs_name);
+char* get_parted_type_string(int msdos_parttype, PartitionScheme scheme);
 gboolean write_partition_table_for_device(LibHalDrive* drive, PartitionScheme scheme, GError** error);
+gboolean set_partition_type(LibHalDrive* drive, int partition, int msdos_type);
+
 GSList* get_volumes_mounted_on_drive(LibHalContext* ctx, LibHalDrive* drive);
 GSList* build_volume_list(LibHalContext* ctx, 
 		  enum FormatVolumeType type, 

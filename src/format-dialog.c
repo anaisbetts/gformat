@@ -473,10 +473,18 @@ write_partition_table(FormatDialog* dialog, FormatVolume* vol, const char* fs)
 
 	/* Write out a new table */
 	GError* err = NULL;
-	const char* dev = libhal_drive_get_device_file(vol->drive);
-	if(!write_partition_table_for_device(vol->drive, formatter_table_hint(vol->drive, dev, fs), &err)) {
+
+	/* FIXME: Somehow, we need to decide what kind of table to write */
+	if(!write_partition_table_for_device(vol->drive, PART_TYPE_MSDOS, &err)) {
 		show_error_dialog(dialog->toplevel, _("Error formatting disk"), err->message);
 		g_error_free(err);
+		goto out;
+	}
+
+	/* Set the partition type */
+	int msdos_type = get_part_type_from_fs(fs);
+	if( !set_partition_type(vol->drive, 0 /* Always first partition */, msdos_type) ) {
+		show_error_dialog(dialog->toplevel, _("Error formatting disk"), _("Couldn't set partition type on drive"));
 		goto out;
 	}
 
@@ -752,16 +760,9 @@ void
 on_format_button_clicked(GtkWidget* w, gpointer user_data)
 {
 	FormatDialog* dialog = g_object_get_data( G_OBJECT(gtk_widget_get_toplevel(w)), "userdata" );
-	GError* err = NULL;
-
 	FormatVolume* vol;
-	char* blockdev;
-	char* fs;
-	gboolean do_encrypt;
-	gboolean do_partition_table;
-	int partition_number;
-	GHashTable* options;
-	GError* error;
+	gchar* fs = NULL;
+	gboolean do_encrypt = FALSE;
 
 	/* Figure out the device params */
 	GtkTreeIter iter;
@@ -770,33 +771,44 @@ on_format_button_clicked(GtkWidget* w, gpointer user_data)
 	if( !(vol = get_cached_device_from_treeiter(dialog, &iter)) )
 		return;
 	fs = get_fs_from_menu(dialog);
+	
+	if(!fs) 	goto error_out;
 
 	if(!warn_user_of_impending_doom(dialog, vol)) {
 		g_debug("User cancelled format!");
-		return;
+		goto error_out;
 	}
-	
-	if(vol->volume) {
-		start_operation(dialog, 1);
-		do_next_operation(dialog, _("Creating filesystem..."));
-		blockdev = g_strdup(libhal_volume_get_device_file(vol->volume));
-		do_mkfs(dialog, blockdev);
-	} else {
-		/* FIXME: Stop us from going into unfinished function */
-		return;
+
+	/* TODO: Here's where we'll add the floppy support */
+
+	gboolean create_table = !(vol->volume || libhal_drive_no_partitions_hint(vol->drive));
+	start_operation(dialog, 2 + (create_table ? 1 : 0) + (do_encrypt ? 1 : 0));
+	if(create_table) {
+		do_next_operation(dialog, _("Creating partition table..."));
 
 		/* TODO: Figure out what to do if any other partition is mounted on this drive */
 		if(!(vol = write_partition_table(dialog, vol, fs)))
 			goto error_out;
-		
-		blockdev = libhal_volume_get_device_file(vol->volume);
-		partition_number = 1;
+		if(!vol->volume)
+			goto error_out;
+
 	}
 
+	if(do_encrypt) {
+		/* TODO: Set up encryption here */
+	}
+
+	g_debug("Creating filesystem on %s...\n", vol->friendly_name);
 	
+	do_next_operation(dialog, _("Creating filesystem..."));
+	do_mkfs(dialog, libhal_volume_get_device_file(vol->volume));
+
+	do_next_operation(dialog, _("Syncing changes..."));
+	g_spawn_command_line_sync("sync", NULL, NULL, NULL, NULL);
+
 error_out:
-	g_free(blockdev);
-	g_free(fs);
+	if(fs)
+		g_free(fs);
 
 	return;
 }

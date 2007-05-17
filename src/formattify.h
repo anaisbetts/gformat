@@ -26,6 +26,8 @@
 #ifndef _FORMATTIFY_H
 #define _FORMATTIFY_H
 
+#include "format-dialog.h"
+
 typedef struct _ProcessOutput
 {
 	GSourceFunc callback;
@@ -38,5 +40,6 @@ typedef struct _ProcessOutput
 gboolean spawn_async_get_output(gchar** argv, GSourceFunc callback, gpointer user_data);
 void process_output_free(ProcessOutput* obj);
 GHashTable* build_supported_fs_list(void);
+gboolean do_mkfs(FormatDialog* dialog, const char* block_device);
 
 #endif
