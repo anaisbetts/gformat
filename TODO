@@ -1,6 +1,5 @@
-For 2.21:
+For 2.20:
 	* Finish formatting backend
-		- Make sure HAL unmounts the partition first
 		- Just format a partition (DONE)
 		- Rewrite table and format (DONE)
 		- Ask HAL to remount the new partition
@@ -20,9 +19,6 @@ For 2.21:
 
 	* Write floppy formatting support, most likely code taken directly from
 	  GFloppy
-
-	* I have a feeling that PolicyKit comes into play somewhere in here, but
-	  I'm not sure exactly how...
 	
 Future:
 	* Add support for other file system types, when they are available
